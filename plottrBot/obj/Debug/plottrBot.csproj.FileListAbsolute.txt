@@ -1,0 +1,14 @@
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\bin\Debug\plottrBot.exe.config
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\bin\Debug\plottrBot.exe
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\bin\Debug\plottrBot.pdb
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csprojAssemblyReference.cache
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\MainWindow.g.cs
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\App.g.cs
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot_MarkupCompile.cache
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot_MarkupCompile.lref
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\MainWindow.baml
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.g.resources
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.Properties.Resources.resources
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csproj.GenerateResource.cache
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.exe
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.pdb
