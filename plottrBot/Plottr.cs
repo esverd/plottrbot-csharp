@@ -93,6 +93,7 @@ namespace plottrBot
         private void calcMovementSideToSide()
         {
             imgToArray();
+            BlackLines.Clear();
 
             bool lineStarted = false;
             int x0 = 0, y0 = 0;
@@ -139,6 +140,7 @@ namespace plottrBot
         private void calcMovementUpDown()
         {
             imgToArray();
+            BlackLines.Clear();
 
             bool lineStarted = false;
             int x0 = 0, y0 = 0;
@@ -187,6 +189,8 @@ namespace plottrBot
         {
             //calcMovementSideToSide();
             calcMovementUpDown();
+            AllLines.Clear();
+            GeneratedGCODE.Clear();
 
             double xMinVal = BlackLines[0].X0;
             double xMaxVal = BlackLines[0].X1;

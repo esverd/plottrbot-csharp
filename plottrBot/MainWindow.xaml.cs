@@ -80,7 +80,7 @@ namespace plottrBot
             countCmdSent = 0;
 
             //read start and end gcode from text boxes
-            myPlot.StartGCODE = "G1\n";
+            myPlot.StartGCODE = "G1 Z1\n";
             myPlot.EndGCODE = txtEndGcode.Text + "\n";
             //myPlot.GeneratedGCODE.Clear();
             //canvasPreview.Children.Clear();
@@ -88,7 +88,6 @@ namespace plottrBot
             myPlot.Img.Freeze();        //bitmapimages needs to be frozen before they can be accessed by other threads
             await Task.Run(() => myPlot.GenerateGCODE());       //generates the GCODE to send to the robot
 
-            
             Dispatcher.Invoke(() =>
             {
                 canvasPreview.Children.Clear();
@@ -142,7 +141,7 @@ namespace plottrBot
                     if (timedOut)
                     {
                         txtOut.Text = "Timed out\n";
-                        break;      //exits the for loop
+                        //break;      //exits the for loop
                     }
                     //countCmdSent = i;        //increment number of commands sent
                 }
@@ -212,7 +211,7 @@ namespace plottrBot
                         port.Write(message);       //sends the current command over usb
 
                         //wait for GO from arduino
-                        double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
+                        double WaitTimeout = (60 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
 
                         string incoming = "";
                         while (!incoming.Contains("GO"))
@@ -461,15 +460,20 @@ namespace plottrBot
             myLine.Y2 = leftUp.Y1;
             canvasPreview.Children.Add(myLine);
 
+
+            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));    //goes from home position
+
             if ((bool)checkBoxDrawingBoundingBox.IsChecked)
-                await sendSerialStringAsync("G0\n");       //pen touches the canvas
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z0\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
             else
-                await sendSerialStringAsync("G1\n");
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", topLeftToRight.X1, topLeftToRight.Y1));    //goes from home position
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", topLeftToRight.X0, topLeftToRight.Y0));    //draws first line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", rightDown.X0, rightDown.Y0));              //draws second line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", downRightToLeft.X0, downRightToLeft.Y0));  //draws third line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", leftUp.X0, leftUp.Y0));                    //draws fourth line
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
+
+            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y1));              //draws second line
+            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y1));  //draws third line
+            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));                    //draws fourth line
+
+            if ((bool)checkBoxDrawingBoundingBox.IsChecked)
+                await sendSerialStringAsync("G1 Z1\n");       //pen touches the canvas
             await sendSerialStringAsync("G28\n");                    //goes to home position
 
         }
