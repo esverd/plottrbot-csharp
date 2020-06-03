@@ -33,6 +33,7 @@ namespace plottrBot
         int robotWidth, robotHeight, previewWidth, previewHeight;
         double scaleToPreview;
         int countCmdSent;
+        Line selectedPreviewLine;
 
         public MainWindow()
         {
@@ -51,6 +52,8 @@ namespace plottrBot
             txtToolDiameter.Text = Plottr.ToolDiameter.ToString();
 
             port = new SerialPort();        //creates a blank serial port to be specified later
+
+            selectedPreviewLine = new Line();
 
             countCmdSent = 0;
 
@@ -77,7 +80,7 @@ namespace plottrBot
 
         private async void btnSliceImg_Click(object sender, RoutedEventArgs e)     //slices the image to individual lines that are either drawn or moved without drawing
         {
-            countCmdSent = 0;
+            countCmdSent = 0;   //0;
 
             //read start and end gcode from text boxes
             myPlot.StartGCODE = "G1 Z1\n";
@@ -109,6 +112,7 @@ namespace plottrBot
                 }
             });
 
+            sliderCmdCount.Maximum = myPlot.AllLines.Count;
 
             //previewing GCODE text is nice but super slow
             //foreach (string command in myPlot.GeneratedGCODE)
@@ -126,9 +130,9 @@ namespace plottrBot
 
         private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
         {
-            txtOut.Text = "Drawing image";
+            txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}", countCmdSent, myPlot.GeneratedGCODE.Count);
             btnPauseDrawing.IsEnabled = true;
-
+            
             try
             {
                 //TODO add threading
@@ -140,7 +144,7 @@ namespace plottrBot
                     bool timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
                     if (timedOut)
                     {
-                        txtOut.Text = "Timed out\n";
+                        txtOut.Text += "Timed out\n";
                         //break;      //exits the for loop
                     }
                     //countCmdSent = i;        //increment number of commands sent
@@ -159,10 +163,10 @@ namespace plottrBot
             //bool timedOut = sendSerialString(txtSerialCmd.Text + "\n");
             bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
             if (timedOut)
-                txtOut.Text = "Timed out\n";
+                txtOut.Text += "Timed out\n";
         }
 
-        private bool sendSerialString(string message)
+        private bool sendSerialString(string message)       //not used anymore
         {
             try
             {
@@ -249,8 +253,8 @@ namespace plottrBot
             }
             else if (elements.Contains("com disable"))
             {
-                btnSend.IsEnabled = false;
-                txtSerialCmd.IsEnabled = false;
+                //btnSend.IsEnabled = false;
+                //txtSerialCmd.IsEnabled = false;
                 btnSendImg.IsEnabled = false;
                 btnBoundingBox.IsEnabled = false;
             }
@@ -362,6 +366,67 @@ namespace plottrBot
                 btnPauseDrawing.Content = "Pause drawing";
                 btnSendImg_Click(sender, e);
             }
+        }
+
+        private void btnCmdStart_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                countCmdSent = Convert.ToInt32(txtCmdStart.Text);
+                btnSendImg_Click(sender, e);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+        }
+
+        private async void btnEnableStepper_Click(object sender, RoutedEventArgs e)
+        {
+            if (await sendSerialStringAsync("M17" + "\n"))
+                txtOut.Text += "Timed out\n";
+        }
+
+        private async void btnDisableStepper_Click(object sender, RoutedEventArgs e)
+        {
+            if (await sendSerialStringAsync("M18" + "\n"))
+                txtOut.Text += "Timed out\n";
+        }
+
+        private async void btnPenTouchCanvas_Click(object sender, RoutedEventArgs e)
+        {
+            if (await sendSerialStringAsync("G1 Z0" + "\n"))
+                txtOut.Text += "Timed out\n";
+        }
+
+        private async void btnNoPenTouchCanvas_Click(object sender, RoutedEventArgs e)
+        {
+            if (await sendSerialStringAsync("G1 Z1" + "\n"))
+                txtOut.Text += "Timed out\n";
+        }
+
+        private void sliderCmdCount_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            txtCmdStart.Text = ((int)sliderCmdCount.Value).ToString();
+
+            canvasPreview.Children.Remove(selectedPreviewLine);
+            selectedPreviewLine.Stroke = System.Windows.Media.Brushes.Red;
+            selectedPreviewLine.StrokeThickness = 2;
+            selectedPreviewLine.X1 = myPlot.AllLines[(int)sliderCmdCount.Value].X0 * scaleToPreview;
+            selectedPreviewLine.Y1 = myPlot.AllLines[(int)sliderCmdCount.Value].Y0 * scaleToPreview;
+            selectedPreviewLine.X2 = myPlot.AllLines[(int)sliderCmdCount.Value].X1 * scaleToPreview;
+            selectedPreviewLine.Y2 = myPlot.AllLines[(int)sliderCmdCount.Value].Y1 * scaleToPreview;
+            canvasPreview.Children.Add(selectedPreviewLine);
+        }
+
+        private void btnSliderIncrease_Click(object sender, RoutedEventArgs e)
+        {
+            sliderCmdCount.Value++;
+        }
+
+        private void btnSliderDecrease_Click(object sender, RoutedEventArgs e)
+        {
+            sliderCmdCount.Value--;
         }
 
         private void btnChangeToolDiameter_Click(object sender, RoutedEventArgs e)

@@ -17,9 +17,10 @@
                         <GradientStop Color="#FFFBFBFB" Offset="1"/>
                     </LinearGradientBrush>
                 </TabItem.Background>
-                <Grid Background="#FFFBFBFB" Margin="-2">
+                <Grid Background="#FFFBFBFB" Margin="-2,-3,-2,-1">
                     <Grid Margin="-3,35,0,516" Grid.ColumnSpan="2">
-                        <Button x:Name="btnSliceImg" Content="Slice image" HorizontalAlignment="Left" Margin="19,175,0,0" VerticalAlignment="Top" Width="290" Click="btnSliceImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16" IsEnabled="False"/>
+                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="216" Margin="0,16,-1,0" VerticalAlignment="Top" Width="330"/>
+                        <Button x:Name="btnSliceImg" Content="Slice image" HorizontalAlignment="Left" Margin="19,170,0,0" VerticalAlignment="Top" Width="290" Click="btnSliceImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16" IsEnabled="False"/>
                         <Button x:Name="btnSelectImg" Content="Select image" HorizontalAlignment="Left" Margin="19,42,0,0" VerticalAlignment="Top" Width="290" Click="btnSelectImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <TextBox x:Name="txtMoveX" HorizontalAlignment="Left" Height="24" Margin="45,95,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="85" TextAlignment="Right" ToolTip="Position of top left image corner" IsEnabled="False" FontSize="14"/>
                         <TextBox x:Name="txtMoveY" HorizontalAlignment="Left" Height="26" Margin="45,130,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="85" TextAlignment="Right" ToolTip="Position of top left image corner" IsEnabled="False" FontSize="14"/>
@@ -29,18 +30,17 @@
                         <TextBlock HorizontalAlignment="Left" Margin="135,98,0,0" TextWrapping="Wrap" Text="[mm]" VerticalAlignment="Top" Height="21" FontSize="14" Width="37"/>
                         <TextBlock HorizontalAlignment="Left" Margin="19,130,0,0" TextWrapping="Wrap" Text="Y =" VerticalAlignment="Top" Height="21" FontSize="14" Width="23" TextAlignment="Right"/>
                         <TextBlock HorizontalAlignment="Left" Margin="135,130,0,0" TextWrapping="Wrap" Text="[mm]" VerticalAlignment="Top" Height="21" FontSize="14" Width="37"/>
-                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="219" Margin="0,16,-1,0" VerticalAlignment="Top" Width="330"/>
                         <TextBlock HorizontalAlignment="Left" Margin="19,0,0,0" TextWrapping="Wrap" Text="Image options" VerticalAlignment="Top" Height="28" FontSize="20" Width="129" Background="#FFFBFBFB"/>
                     </Grid>
                     <Grid Margin="-3,316,0,281">
                         <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="213" Margin="0,15,-1,-30" VerticalAlignment="Top" Width="330"/>
-                        <Button x:Name="btnSendImg" Content="Send image to robot" HorizontalAlignment="Left" Margin="19,125,0,0" VerticalAlignment="Top" Width="290" Click="btnSendImg_Click" IsEnabled="False" Height="34" Background="#FF8B8B8B" FontSize="16"/>
+                        <Button x:Name="btnSendImg" Content="Send image to robot" HorizontalAlignment="Left" Margin="19,165,0,-3" VerticalAlignment="Top" Width="290" Click="btnSendImg_Click" IsEnabled="False" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <Button x:Name="btnConnect" Content="Connect USB" HorizontalAlignment="Left" Margin="177,42,0,0" VerticalAlignment="Top" Width="132" Click="btnConnect_Click" Height="27" FontSize="14"/>
                         <ComboBox x:Name="comboBoxCOM" HorizontalAlignment="Left" Margin="19,42,0,0" VerticalAlignment="Top" Width="153" DropDownOpened="comboBoxCOM_DropDownOpened" Height="27"/>
                         <Button x:Name="btnBoundingBox" Content="Move in bounding box formation" HorizontalAlignment="Left" Margin="19,83,0,0" VerticalAlignment="Top" Width="290" Click="btnBoundingBox_Click" IsEnabled="False" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions"/>
 
                         <TextBlock HorizontalAlignment="Left" Margin="19,0,0,0" TextWrapping="Wrap" Text="Robot control" VerticalAlignment="Top" Height="28" FontSize="20" Width="123" Background="#FFFBFBFB"/>
-                        <Button x:Name="btnPauseDrawing" Content="Pause drawing" HorizontalAlignment="Left" Margin="19,174,0,-3" VerticalAlignment="Top" Width="290" IsEnabled="False" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions" Click="btnPauseDrawing_Click"/>
+                        <Button x:Name="btnPauseDrawing" Content="Pause drawing" HorizontalAlignment="Left" Margin="19,124,0,0" VerticalAlignment="Top" Width="290" IsEnabled="False" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions" Click="btnPauseDrawing_Click"/>
                     </Grid>
                 </Grid>
             </TabItem>
@@ -52,7 +52,7 @@
                     </LinearGradientBrush>
                 </TabItem.Background>
                 <Grid Background="#FFFBFBFB">
-                    <TextBox x:Name="txtOut" HorizontalAlignment="Left" Height="332" Margin="16,432,0,0" TextWrapping="Wrap" Text="Status messages..." VerticalAlignment="Top" Width="290" VerticalScrollBarVisibility="Auto" IsEnabled="False"/>
+                    <TextBox x:Name="txtOut" HorizontalAlignment="Left" Height="208" Margin="16,601,0,-20" TextWrapping="Wrap" Text="Status messages&#xD;&#xA;" VerticalAlignment="Top" Width="290" VerticalScrollBarVisibility="Auto" IsEnabled="False"/>
                     <Button x:Name="btnSend" Content="Send serial msg" HorizontalAlignment="Left" Margin="205,57,0,0" VerticalAlignment="Top" Width="101" Height="27" Click="btnSend_Click" IsEnabled="False"/>
                     <TextBox x:Name="txtSerialCmd" HorizontalAlignment="Left" Margin="16,57,0,0" Width="184" Height="27" TextWrapping="Wrap" VerticalAlignment="Top" IsEnabled="False"/>
                     <TextBox x:Name="txtToolDiameter" HorizontalAlignment="Left" Height="27" Margin="16,185,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" TextAlignment="Right"/>
@@ -63,8 +63,20 @@
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,165,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,232,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,37,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
-                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,276,0,0" TextWrapping="Wrap" Text="G1 Z1&#xD;&#xA;G28&#xD;&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
-                    <TextBlock HorizontalAlignment="Left" Margin="16,257,0,0" TextWrapping="Wrap" Text="End GCODE" VerticalAlignment="Top"/>
+                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,466,0,0" TextWrapping="Wrap" Text="G1 Z1&#xD;&#xA;G28&#xD;&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="16,447,0,0" TextWrapping="Wrap" Text="End GCODE" VerticalAlignment="Top"/>
+                    <TextBox x:Name="txtCmdStart" HorizontalAlignment="Left" Height="27" Margin="16,252,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" TextAlignment="Right"/>
+                    <Button x:Name="btnCmdStart" Content="Start from cmd number" HorizontalAlignment="Left" Margin="142,252,0,0" VerticalAlignment="Top" Width="164" Click="btnCmdStart_Click" Height="27"/>
+                    <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,325,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
+                    <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,580,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
+                    <Button x:Name="btnEnableStepper" Content="Enable motors" HorizontalAlignment="Left" Margin="16,346,0,0" VerticalAlignment="Top" Width="142" Height="27" Click="btnEnableStepper_Click"/>
+                    <Button x:Name="btnDisableStepper" Content="Disable motors" HorizontalAlignment="Left" Margin="164,346,0,0" VerticalAlignment="Top" Width="142" Height="27" Click="btnDisableStepper_Click"/>
+                    <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,425,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
+                    <Button x:Name="btnPenTouchCanvas" Content="Move tool to canvas" HorizontalAlignment="Left" Margin="16,378,0,0" VerticalAlignment="Top" Width="142" Height="27" Click="btnPenTouchCanvas_Click"/>
+                    <Button x:Name="btnNoPenTouchCanvas" Content="Tool away from canvas" HorizontalAlignment="Left" Margin="164,378,0,0" VerticalAlignment="Top" Width="142" Height="27" Click="btnNoPenTouchCanvas_Click"/>
+                    <Slider x:Name="sliderCmdCount" HorizontalAlignment="Left" Margin="16,287,0,0" VerticalAlignment="Top" Width="266" ValueChanged="sliderCmdCount_ValueChanged" SmallChange="1" Height="21"/>
+                    <Button x:Name="btnSliderIncrease" Content="&gt;" HorizontalAlignment="Left" Height="21" Margin="294,287,0,0" VerticalAlignment="Top" Width="12" FontSize="14" Click="btnSliderIncrease_Click"/>
+                    <Button x:Name="btnSliderDecrease" Content="&lt;" HorizontalAlignment="Left" Height="21" Margin="282,287,0,0" VerticalAlignment="Top" Width="12" FontSize="14" Click="btnSliderDecrease_Click"/>
                 </Grid>
             </TabItem>
         </TabControl>
