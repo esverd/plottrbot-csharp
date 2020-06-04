@@ -55,8 +55,6 @@ namespace plottrBot
 
             selectedPreviewLine = new Line();
 
-            countCmdSent = 0;
-
         }
 
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
@@ -112,7 +110,9 @@ namespace plottrBot
                 }
             });
 
-            sliderCmdCount.Maximum = myPlot.AllLines.Count;
+            sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
+
+            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count;
 
             //previewing GCODE text is nice but super slow
             //foreach (string command in myPlot.GeneratedGCODE)
@@ -372,7 +372,13 @@ namespace plottrBot
         {
             try
             {
-                countCmdSent = Convert.ToInt32(txtCmdStart.Text);
+                int cmdNo = Convert.ToInt32(txtCmdStart.Text);
+                //countCmdSent = GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", line.X1, line.Y1));
+                
+                //string temp = (string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
+
+                countCmdSent = myPlot.GeneratedGCODE.IndexOf(string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
+
                 btnSendImg_Click(sender, e);
             }
             catch (Exception ex)
@@ -402,6 +408,12 @@ namespace plottrBot
         private async void btnNoPenTouchCanvas_Click(object sender, RoutedEventArgs e)
         {
             if (await sendSerialStringAsync("G1 Z1" + "\n"))
+                txtOut.Text += "Timed out\n";
+        }
+
+        private async void btnHomePosition_Click(object sender, RoutedEventArgs e)
+        {
+            if (await sendSerialStringAsync("G28" + "\n"))
                 txtOut.Text += "Timed out\n";
         }
 
