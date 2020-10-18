@@ -12,3 +12,4 @@ C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.Pro
 C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csproj.GenerateResource.cache
 C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.exe
 C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.pdb
+C:\D\CREATIVE PROJECTS\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csproj.CoreCompileInputs.cache

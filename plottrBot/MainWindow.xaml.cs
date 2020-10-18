@@ -40,7 +40,7 @@ namespace plottrBot
             InitializeComponent();
             
             robotWidth = 1460;      //in mm     //TODO load from settings/assets
-            robotHeight = 1050;     //in mm     //TODO load from settings/assets
+            robotHeight = 1050; //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
             previewWidth = 1200;
             scaleToPreview = (double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
             previewHeight = (int)(robotHeight * scaleToPreview);
@@ -48,8 +48,8 @@ namespace plottrBot
             borderPreview.Height = previewHeight;
             tabControlOptions.Height = previewHeight + 25;
             
-            Plottr.ToolDiameter = 1.0;     //in mm     //TODO load from settings/assets
-            txtToolDiameter.Text = Plottr.ToolDiameter.ToString();
+            //Plottr.ToolDiameter = 1.0;     //in mm     //TODO load from settings/assets
+            //txtToolDiameter.Text = Plottr.ToolDiameter.ToString();
 
             port = new SerialPort();        //creates a blank serial port to be specified later
 
@@ -93,7 +93,7 @@ namespace plottrBot
             {
                 canvasPreview.Children.Clear();
                 canvasPreview.Background = System.Windows.Media.Brushes.White;
-                //draws preview lines that the robot is going to move along
+                //draws preview lines that the robot is going to move along:
                 foreach (TraceLine lineCommand in myPlot.AllLines)
                 {
                     Line myLine = new Line();
@@ -112,13 +112,13 @@ namespace plottrBot
 
             sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
 
-            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count;
+            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
 
             //previewing GCODE text is nice but super slow
-            //foreach (string command in myPlot.GeneratedGCODE)
-            //{
-            //    txtOut.Text += command;     //prints the command to text output
-            //}
+            foreach (string command in myPlot.GeneratedGCODE)
+            {
+                txtOut.Text += command;     //prints the command to text output
+            }
 
 
             if (btnSend.IsEnabled)
@@ -441,45 +441,6 @@ namespace plottrBot
             sliderCmdCount.Value--;
         }
 
-        private void btnChangeToolDiameter_Click(object sender, RoutedEventArgs e)
-        {
-            ////change DPI
-            ////redraw previewImage
-            ///
-
-            Plottr.ToolDiameter = Convert.ToDouble(txtToolDiameter.Text);
-
-            //Plottr.ToolDiameter = Convert.ToDouble(txtToolDiameter.Text);
-            ////double horizontalRes = myPlot.Img.PixelWidth / (myPlot.Img.Width * Plottr.ToolDiameter);
-            ////double verticalRes = myPlot.Img.PixelHeight / (myPlot.Img.Height * Plottr.ToolDiameter);
-            ////double horizontalRes = myPlot.TempImg.HorizontalResolution / Plottr.ToolDiameter;
-            ////double verticalRes = myPlot.TempImg.VerticalResolution / Plottr.ToolDiameter;
-
-            //double horizontalRes = Plottr.ToolDiameter;
-            //double verticalRes = Plottr.ToolDiameter;
-
-            //txtOut.Text = string.Format("Original: DPI X = {0}.  DPI Y = {1}.  Pixel width = {2}\n", myPlot.TempImg.HorizontalResolution, myPlot.TempImg.VerticalResolution, myPlot.TempImg.Width);
-            ////myPlot.TempImg.SetResolution((float)horizontalRes, (float)verticalRes);
-
-            ////myPlot.TempImg = new Bitmap(myPlot.TempImg, new System.Drawing.Size((int)horizontalRes, (int)verticalRes));
-            //txtOut.Text += string.Format("Scaled: DPI X = {0}.  DPI Y = {1}.  Pixel width = {2}\n", myPlot.TempImg.HorizontalResolution, myPlot.TempImg.VerticalResolution, myPlot.TempImg.Width);
-
-            ////Graphics graphic = Graphics.FromImage(myPlot.TempImg);
-
-
-            //using (Bitmap bitmap = myPlot.TempImg)
-            //{
-            //    using (Bitmap newBitmap = new Bitmap(bitmap))
-            //    {
-            //        newBitmap.SetResolution(1, 1);
-            //        newBitmap.Save("file300.bmp", ImageFormat.Bmp);
-            //    }
-            //}
-
-
-        }
-
-        
 
         private async void btnBoundingBox_Click(object sender, RoutedEventArgs e)
         {
@@ -511,7 +472,7 @@ namespace plottrBot
             canvasPreview.Children.Add(myLine);
 
             myLine = new Line();
-            myLine.Stroke = System.Windows.Media.Brushes.Green;
+            myLine.Stroke = System.Windows.Media.Brushes.Red;
             myLine.StrokeThickness = 2;
             myLine.X1 = rightDown.X0;
             myLine.Y1 = rightDown.Y0;
@@ -520,7 +481,7 @@ namespace plottrBot
             canvasPreview.Children.Add(myLine);
 
             myLine = new Line();
-            myLine.Stroke = System.Windows.Media.Brushes.Blue;
+            myLine.Stroke = System.Windows.Media.Brushes.Red;
             myLine.StrokeThickness = 2;
             myLine.X1 = downRightToLeft.X0;
             myLine.Y1 = downRightToLeft.Y0;
@@ -529,7 +490,7 @@ namespace plottrBot
             canvasPreview.Children.Add(myLine);
 
             myLine = new Line();
-            myLine.Stroke = System.Windows.Media.Brushes.Black;
+            myLine.Stroke = System.Windows.Media.Brushes.Red;
             myLine.StrokeThickness = 2;
             myLine.X1 = leftUp.X0;
             myLine.Y1 = leftUp.Y0;

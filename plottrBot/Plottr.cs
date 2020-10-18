@@ -52,8 +52,10 @@ namespace plottrBot
         {
             ratioWidthToPx = GetImgWidth / Img.PixelWidth;     //calculates the ratio between picture width in mm and number of pixels in width
             ratioHeightToPx = GetImgHeight / Img.PixelHeight;
-            pxArrayWidth = (Int32)(TempImg.Width / ToolDiameter);
-            pxArrayHeight = (Int32)(TempImg.Height / ToolDiameter);
+            //pxArrayWidth = (Int32)(TempImg.Width / ToolDiameter);
+            //pxArrayHeight = (Int32)(TempImg.Height / ToolDiameter);
+            pxArrayWidth = TempImg.Width;
+            pxArrayHeight = TempImg.Height;
 
             //double dpi = 25.4 / ToolDiameter;
             //pxArrayWidth = (Int32)(ratioWidthToPx * dpi);
@@ -144,14 +146,14 @@ namespace plottrBot
 
             bool lineStarted = false;
             int x0 = 0, y0 = 0;
-            bool upToDown = true;
+            bool goingDown = true;
 
             for (int x = 0; x < pxArrayWidth; x++)
             {
                 for (int i = 0; i < pxArrayHeight - 1; i++)
                 {
                     int y;
-                    if (upToDown) y = i;
+                    if (goingDown) y = i;
                     else y = pxArrayHeight - 1 - i;
 
                     if (!lineStarted && pixelArray[x, y])       //if this is the first black pixel in a new line
@@ -164,23 +166,23 @@ namespace plottrBot
                     int endY = y;
                     if (lineStarted)
                     {
-                        if (upToDown && (!pixelArray[x, y + 1] || y >= pxArrayHeight - 2))
+                        if (goingDown && (!pixelArray[x, y + 1] || y >= pxArrayHeight - 2))     //next downward pixel is white OR current array location is beyond pixel height
                         {
                             if (pixelArray[x, y + 1])    //check the very last pixel as well
                                 endY = y + 1;
                             lineStarted = false;        //start a new line
                             BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
                         }
-                        if (!upToDown && (!pixelArray[x, y - 1] || y <= 1))
+                        if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
                         {
                             if (pixelArray[x, y - 1])    //check the very last pixel as well
-                                endY = y + 1;
+                                endY = y - 1;       //endY = y + 1;
                             lineStarted = false;
                             BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
                         }
                     }
                 }
-                upToDown = !upToDown;
+                goingDown = !goingDown;
             } //for x
         }
 
