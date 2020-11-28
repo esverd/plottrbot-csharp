@@ -161,9 +161,12 @@ namespace plottrBot
         {
             //txtOut.Text = "Sending";
             //bool timedOut = sendSerialString(txtSerialCmd.Text + "\n");
-            bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
-            if (timedOut)
-                txtOut.Text += "Timed out\n";
+
+            txtOut.Text += "qwerty\n";
+
+            //bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
+            //if (timedOut)
+            //    txtOut.Text += "Timed out\n";
         }
 
         private bool sendSerialString(string message)       //not used anymore
@@ -359,7 +362,7 @@ namespace plottrBot
             if(btnPauseDrawing.Content.ToString().Contains("Pause"))
             {
                 btnPauseDrawing.Content = "Continue drawing";
-                txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";       //mismatch between this countCmdSent and the one used in btnCmdStart_Click
             }
             else
             {
@@ -378,7 +381,7 @@ namespace plottrBot
                 //string temp = (string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
 
                 countCmdSent = myPlot.GeneratedGCODE.IndexOf(string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
-
+                
                 btnSendImg_Click(sender, e);
             }
             catch (Exception ex)
@@ -435,6 +438,19 @@ namespace plottrBot
         {
             sliderCmdCount.Value++;
         }
+
+        private void txtCmdStart_LostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                sliderCmdCount.Value = Convert.ToInt32(txtCmdStart.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+        }
+
 
         private void btnSliderDecrease_Click(object sender, RoutedEventArgs e)
         {
