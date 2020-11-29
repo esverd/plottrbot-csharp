@@ -52,6 +52,8 @@ namespace plottrBot
         public string EndGCODE { get; set; }        //gcode that runs when the drawing has finished
 
         static public bool TimedOut { get; set; }
+        static public int RobotWidth { get; set; }
+        static public int RobotHeight { get; set; }
 
 
         public Plottr(string filename)
@@ -69,12 +71,25 @@ namespace plottrBot
 
         private void imgToArray()
         {
+            //ratioWidthToPx = usableImgWidth / Img.PixelWidth;     //calculates the ratio between picture width in mm and number of pixels in width
+            //ratioHeightToPx = usableImgHeight / Img.PixelHeight;
+            //pxArrayWidth = TempImg.Width;
+            //pxArrayHeight = TempImg.Height;
+
+            //this takes into consideration the maximum size of the robot canvas
+            //areas outside the robot canvas gets cropped as they are unreachable
             ratioWidthToPx = GetImgWidth / Img.PixelWidth;     //calculates the ratio between picture width in mm and number of pixels in width
             ratioHeightToPx = GetImgHeight / Img.PixelHeight;
-            //pxArrayWidth = (Int32)(TempImg.Width / ToolDiameter);
-            //pxArrayHeight = (Int32)(TempImg.Height / ToolDiameter);
-            pxArrayWidth = TempImg.Width;
-            pxArrayHeight = TempImg.Height;
+
+            double usableImgWidth = GetImgWidth;
+            if (usableImgWidth - ImgMoveX > RobotWidth) usableImgWidth = RobotWidth - ImgMoveX;
+            double usableImgHeight = GetImgHeight;
+            if (usableImgHeight - ImgMoveY > RobotHeight) usableImgHeight = RobotHeight - ImgMoveY;
+
+            pxArrayWidth = (int)(usableImgWidth / ratioWidthToPx);
+            pxArrayHeight = (int)(usableImgHeight / ratioHeightToPx);
+            
+
 
             //double dpi = 25.4 / ToolDiameter;
             //pxArrayWidth = (Int32)(ratioWidthToPx * dpi);

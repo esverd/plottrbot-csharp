@@ -27,10 +27,10 @@ namespace plottrBot
     /// </summary>
     public partial class MainWindow : Window
     {
-        Plottr myPlot;          //the object ffrom the custom Plottr class
+        Plottr myPlot;          //the object from the custom Plottr class
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
-        int robotWidth, robotHeight, previewWidth, previewHeight;
+        //int robotWidth, robotHeight;  //previewWidth, previewHeight
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
@@ -42,20 +42,23 @@ namespace plottrBot
         public MainWindow()
         {
             InitializeComponent();
-            
-            robotWidth = 1460;      //in mm     //TODO load from settings/assets
-            robotHeight = 1050; //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
-            previewWidth = 1200;
-            scaleToPreview = (double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
-            previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
 
-            borderPreview.Width = previewWidth + 2;
-            borderPreview.Height = previewHeight + 2;
+            tabControlOptions.Height = canvasPreview.Height + 25 + 2;
 
-            canvasPreview.Width = previewWidth;
-            canvasPreview.Height = previewHeight;
+            //robotWidth = 1460;      //in mm     //TODO load from settings/assets
+            //robotHeight = 550; //1050    //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
+            Plottr.RobotWidth = 1460;
+            Plottr.RobotHeight = 1050;
 
-            tabControlOptions.Height = previewHeight + 25;
+            //previewWidth = 1200;
+            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            //previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
+            canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+
+            //borderPreview.Width = previewWidth + 2;
+            //borderPreview.Height = previewHeight + 2;
+            //canvasPreview.Width = previewWidth;
+            //canvasPreview.Height = previewHeight;
             
             //Plottr.ToolDiameter = 1.0;     //in mm     //TODO load from settings/assets
             //txtToolDiameter.Text = Plottr.ToolDiameter.ToString();
@@ -512,8 +515,8 @@ namespace plottrBot
                 myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
 
                 canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-                myPlot.ImgMoveX = Convert.ToInt32((robotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((robotHeight - myPlot.GetImgHeight) / 2);
+                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
                 placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
 
                 //enables buttons that need the image to work
@@ -783,8 +786,8 @@ namespace plottrBot
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
-                myPlot.ImgMoveX = Convert.ToInt32((robotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((robotHeight - myPlot.GetImgHeight) / 2);
+                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
                 placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
                 btnCenterImg.Content = "Move top left";
             }
@@ -1009,15 +1012,15 @@ namespace plottrBot
             //canvasPreview.Width = robotWidth;
             //canvasPreview.Height = robotHeight;
 
-            canvasPreview.Width = previewWidth;
-            canvasPreview.Height = previewHeight;
+            canvasPreview.Width = canvasPreview.Width;
+            canvasPreview.Height = canvasPreview.Height;
 
             Line myLine = new Line();
             myLine.Stroke = System.Windows.Media.Brushes.DarkGray;
             myLine.StrokeThickness = 3;
             myLine.X1 = 0;
             myLine.Y1 = 0;
-            myLine.X2 = previewWidth;
+            myLine.X2 = canvasPreview.Width;
             myLine.Y2 = 0;
             canvasPreview.Children.Add(myLine);
 
@@ -1027,25 +1030,25 @@ namespace plottrBot
             myLine.X1 = 0;
             myLine.Y1 = 0;
             myLine.X2 = 0;
-            myLine.Y2 = previewHeight;
+            myLine.Y2 = canvasPreview.Height;
             canvasPreview.Children.Add(myLine);
 
             myLine = new Line();
             myLine.Stroke = System.Windows.Media.Brushes.DarkGray;
             myLine.StrokeThickness = 3;
             myLine.X1 = 0;
-            myLine.Y1 = previewHeight;
-            myLine.X2 = previewWidth;
-            myLine.Y2 = previewHeight;
+            myLine.Y1 = canvasPreview.Height;
+            myLine.X2 = canvasPreview.Width;
+            myLine.Y2 = canvasPreview.Height;
             canvasPreview.Children.Add(myLine);
 
             myLine = new Line();
             myLine.Stroke = System.Windows.Media.Brushes.DarkGray;
             myLine.StrokeThickness = 3;
-            myLine.X1 = previewWidth;
+            myLine.X1 = canvasPreview.Width;
             myLine.Y1 = 0;
-            myLine.X2 = previewWidth;
-            myLine.Y2 = previewHeight;
+            myLine.X2 = canvasPreview.Width;
+            myLine.Y2 = canvasPreview.Height;
             canvasPreview.Children.Add(myLine);
 
             //System.Drawing.Rectangle myRect = new System.Drawing.Rectangle(0, 0, robotWidth, 200);
