@@ -201,9 +201,16 @@ namespace plottrBot
 
             for (int i = 0; i < BlackLines.Count - 1; i++)
             {
-                AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));
-                AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));
+                AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
+                AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
+                //bool drawWhileMoving = true;
+                //if (BlackLines[i].Draw != BlackLines[i + 1].Draw)       //not valid as Draw is null for all BlackLines
+                //    drawWhileMoving = false;
+                //AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, drawWhileMoving)); //moves draw head to position for next line
 
+                //TODO move to the very last BlackLines[i+1].X1 and Y1, this is currently not handled
+
+                //finding the minimum and maximum values for both X and Y positions. used to draw the bounding box in GUI
                 if (BlackLines[i].X0 < xMinVal || BlackLines[i].X1 < xMinVal)
                     xMinVal = Math.Min(BlackLines[i].X0, BlackLines[i].X1);
                 if (BlackLines[i].X0 > xMaxVal || BlackLines[i].X1 > xMaxVal)
@@ -212,12 +219,11 @@ namespace plottrBot
                     yMinVal = Math.Min(BlackLines[i].Y0, BlackLines[i].Y1);
                 if (BlackLines[i].Y0 > yMaxVal || BlackLines[i].Y1 > yMaxVal)
                     yMaxVal = Math.Max(BlackLines[i].Y0, BlackLines[i].Y1);
-
             }
 
-            BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);
+            BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);        //saves X and Y positions to draw bounding box later
 
-            //GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
+            ////GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
             GeneratedGCODE.Add(StartGCODE + "\n");
             GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
             foreach (TraceLine line in AllLines)
@@ -226,6 +232,22 @@ namespace plottrBot
                 GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", line.X1, line.Y1));
             }
             GeneratedGCODE.Add(EndGCODE + "\n");
+
+            //GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
+            //GeneratedGCODE.Add(StartGCODE + "\n");
+            //GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
+            //GeneratedGCODE.Add("G1 Z0\n");
+            //for (int i = 0; i < AllLines.Count - 1; i++)
+            //{
+            //    if (AllLines[i].Draw != AllLines[i + 1].Draw)
+            //        GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!AllLines[i].Draw) + "\n");
+            //    GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[i].X1, AllLines[i].Y1));
+            //    //if this line draws black, and next line draws black -> nothing
+            //    //if this line (draw) is not equal to next line (draw) -> change servo position
+            //    //else keep the same servo position
+
+            //}
+            //GeneratedGCODE.Add(EndGCODE + "\n");
 
         }
 

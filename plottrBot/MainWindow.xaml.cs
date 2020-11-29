@@ -34,6 +34,10 @@ namespace plottrBot
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
+        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing };
+        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause };
+        GUIStates currentState;
+        GUITransitions currentTransition;
 
         public MainWindow()
         {
@@ -55,6 +59,442 @@ namespace plottrBot
 
             selectedPreviewLine = new Line();
 
+            currentState = GUIStates.T0blank;
+            updateGUIelements();
+
+        }
+
+        private void disableAllGUIelements()
+        {
+            txtMoveX.IsEnabled = false;
+            txtMoveY.IsEnabled = false;
+            btnMoveImg.IsEnabled = false;
+            btnCenterImg.IsEnabled = false;
+            btnClearImg.IsEnabled = false;
+            btnSliceImg.IsEnabled = false;
+
+            btnBoundingBox.IsEnabled = false;
+            btnPauseDrawing.IsEnabled = false;
+            btnSendImg.IsEnabled = false;
+            btnCmdStart.IsEnabled = false;
+
+            sliderCmdCount.IsEnabled = false;
+            btnSliderDecrease.IsEnabled = false;
+            btnSliderIncrease.IsEnabled = false;
+
+            txtSerialCmd.IsEnabled = false;
+            btnSend.IsEnabled = false;
+            btnEnableStepper.IsEnabled = false;
+            btnDisableStepper.IsEnabled = false;
+            btnPenTouchCanvas.IsEnabled = false;
+            btnNoPenTouchCanvas.IsEnabled = false;
+            btnHomePosition.IsEnabled = false;
+        }
+
+        private void updateGUIelements()
+        {
+            disableAllGUIelements();
+            switch (currentState)
+            {
+                case GUIStates.T0blank:
+                    break;
+                case GUIStates.T1imgLoaded:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    btnSliceImg.IsEnabled = true;
+                    break;
+                case GUIStates.T2imgSliced:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    btnSliceImg.IsEnabled = true;
+                    txtCmdStart.IsEnabled = true;
+                    sliderCmdCount.IsEnabled = true;
+                    btnSliderDecrease.IsEnabled = true;
+                    btnSliderIncrease.IsEnabled = true;
+                    break;
+                case GUIStates.T3usbConnected:
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+                    break;
+                case GUIStates.T4imgLoadedUsbConnected:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    btnSliceImg.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+                    break;
+                case GUIStates.T5imgSlicedUsbConnected:
+                case GUIStates.T6drawing:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    btnSliceImg.IsEnabled = true;
+                    txtCmdStart.IsEnabled = true;
+                    sliderCmdCount.IsEnabled = true;
+                    btnSliderDecrease.IsEnabled = true;
+                    btnSliderIncrease.IsEnabled = true;
+
+                    btnBoundingBox.IsEnabled = true;
+                    btnCmdStart.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+
+                    btnSendImg.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    break;
+                //case GUIStates.T6drawing:
+                //    break;
+                default:
+                    break;
+            }
+        }
+
+        private void handleGUIstates()
+        {
+            switch (currentState)
+            {
+                case GUIStates.T0blank:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H0imgOpen:
+                            currentState = GUIStates.T1imgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            currentState = GUIStates.T3usbConnected;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T1imgLoaded:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H1imgSlice:
+                            currentState = GUIStates.T2imgSliced;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T2imgSliced:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            currentState = GUIStates.T5imgSlicedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T3usbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H0imgOpen:
+                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T4imgLoadedUsbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H1imgSlice:
+                            currentState = GUIStates.T5imgSlicedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T1imgLoaded;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T5imgSlicedUsbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T1imgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            currentState = GUIStates.T6drawing;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T6drawing:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            break;
+                        case GUITransitions.H4usbClose:
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        private void updateGUI2()
+        {
+            switch (currentState)
+            {
+                case GUIStates.T0blank:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H0imgOpen:
+                            txtMoveX.IsEnabled = true;
+                            txtMoveY.IsEnabled = true;
+                            btnMoveImg.IsEnabled = true;
+                            btnCenterImg.IsEnabled = true;
+                            btnClearImg.IsEnabled = true;
+                            btnSliceImg.IsEnabled = true;
+                            currentState = GUIStates.T1imgLoaded;
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            txtSerialCmd.IsEnabled = true;
+                            btnSend.IsEnabled = true;
+                            btnEnableStepper.IsEnabled = true;
+                            btnDisableStepper.IsEnabled = true;
+                            btnPenTouchCanvas.IsEnabled = true;
+                            btnNoPenTouchCanvas.IsEnabled = true;
+                            btnHomePosition.IsEnabled = true;
+                            currentState = GUIStates.T3usbConnected;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T1imgLoaded:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H1imgSlice:
+                            txtCmdStart.IsEnabled = true;
+                            sliderCmdCount.IsEnabled = true;
+                            btnSliderDecrease.IsEnabled = true;
+                            btnSliderIncrease.IsEnabled = true;
+                            currentState = GUIStates.T2imgSliced;
+                            break;
+                        case GUITransitions.H2imgClear:
+                            disableAllGUIelements();
+                            currentState = GUIStates.T0blank;
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            txtSerialCmd.IsEnabled = true;
+                            btnSend.IsEnabled = true;
+                            btnEnableStepper.IsEnabled = true;
+                            btnDisableStepper.IsEnabled = true;
+                            btnPenTouchCanvas.IsEnabled = true;
+                            btnNoPenTouchCanvas.IsEnabled = true;
+                            btnHomePosition.IsEnabled = true;
+                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T2imgSliced:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            disableAllGUIelements();
+                            currentState = GUIStates.T0blank;
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            txtSerialCmd.IsEnabled = true;
+                            btnSend.IsEnabled = true;
+                            btnEnableStepper.IsEnabled = true;
+                            btnDisableStepper.IsEnabled = true;
+                            btnPenTouchCanvas.IsEnabled = true;
+                            btnNoPenTouchCanvas.IsEnabled = true;
+                            btnHomePosition.IsEnabled = true;
+                            btnBoundingBox.IsEnabled = true;
+                            btnSendImg.IsEnabled = true;
+                            btnCmdStart.IsEnabled = true;
+                            currentState = GUIStates.T5imgSlicedUsbConnected;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T3usbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H0imgOpen:
+                            txtMoveX.IsEnabled = true;
+                            txtMoveY.IsEnabled = true;
+                            btnMoveImg.IsEnabled = true;
+                            btnCenterImg.IsEnabled = true;
+                            btnClearImg.IsEnabled = true;
+                            btnSliceImg.IsEnabled = true;
+                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                            break;
+                        case GUITransitions.H4usbClose:
+                            disableAllGUIelements();
+                            currentState = GUIStates.T0blank;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T4imgLoadedUsbConnected:
+                    switch (currentTransition)
+                    { 
+                        case GUITransitions.H1imgSlice:
+                            txtCmdStart.IsEnabled = true;
+                            sliderCmdCount.IsEnabled = true;
+                            btnSliderDecrease.IsEnabled = true;
+                            btnSliderIncrease.IsEnabled = true;
+                            txtSerialCmd.IsEnabled = true;
+                            btnSend.IsEnabled = true;
+                            btnEnableStepper.IsEnabled = true;
+                            btnDisableStepper.IsEnabled = true;
+                            btnPenTouchCanvas.IsEnabled = true;
+                            btnNoPenTouchCanvas.IsEnabled = true;
+                            btnHomePosition.IsEnabled = true;
+                            btnBoundingBox.IsEnabled = true;
+                            btnSendImg.IsEnabled = true;
+                            btnCmdStart.IsEnabled = true;
+                            break;
+                        case GUITransitions.H2imgClear:
+                            txtMoveX.IsEnabled = false;
+                            txtMoveY.IsEnabled = false;
+                            btnMoveImg.IsEnabled = false;
+                            btnCenterImg.IsEnabled = false;
+                            btnClearImg.IsEnabled = false;
+                            btnSliceImg.IsEnabled = false;
+                            currentState = GUIStates.T3usbConnected;
+                            break;
+                        case GUITransitions.H4usbClose:
+                            txtSerialCmd.IsEnabled = false;
+                            btnSend.IsEnabled = false;
+                            btnEnableStepper.IsEnabled = false;
+                            btnDisableStepper.IsEnabled = false;
+                            btnPenTouchCanvas.IsEnabled = false;
+                            btnNoPenTouchCanvas.IsEnabled = false;
+                            btnHomePosition.IsEnabled = false;
+                            currentState = GUIStates.T1imgLoaded;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T5imgSlicedUsbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            txtMoveX.IsEnabled = false;
+                            txtMoveY.IsEnabled = false;
+                            btnMoveImg.IsEnabled = false;
+                            btnCenterImg.IsEnabled = false;
+                            btnClearImg.IsEnabled = false;
+                            btnSliceImg.IsEnabled = false;
+                            btnBoundingBox.IsEnabled = false;
+                            btnSendImg.IsEnabled = false;
+                            btnCmdStart.IsEnabled = false;
+                            currentState = GUIStates.T3usbConnected;
+                            break;
+                        case GUITransitions.H4usbClose:
+                            txtSerialCmd.IsEnabled = false;
+                            btnSend.IsEnabled = false;
+                            btnEnableStepper.IsEnabled = false;
+                            btnDisableStepper.IsEnabled = false;
+                            btnPenTouchCanvas.IsEnabled = false;
+                            btnNoPenTouchCanvas.IsEnabled = false;
+                            btnHomePosition.IsEnabled = false;
+                            currentState = GUIStates.T1imgLoaded;
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            btnPauseDrawing.IsEnabled = true;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T6drawing:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            break;
+                        case GUITransitions.H4usbClose:
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
         }
 
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
@@ -72,7 +512,9 @@ namespace plottrBot
                 placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
 
                 //enables buttons that need the image to work
-                enabledUIElements("img enable");
+                //enabledUIElements("img enable");
+                currentTransition = GUITransitions.H0imgOpen;
+                handleGUIstates();
             }
         }
 
@@ -112,30 +554,31 @@ namespace plottrBot
 
             sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
 
-            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
+            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";      //takes a lot of time
 
-            //previewing GCODE text is nice but super slow
-            foreach (string command in myPlot.GeneratedGCODE)
-            {
-                txtOut.Text += command;     //prints the command to text output
-            }
+            //previewing GCODE text is nice for debugging but super slow
+            //foreach (string command in myPlot.GeneratedGCODE)
+            //{
+            //    txtOut.Text += command;     //prints the command to text output
+            //}
 
+            //if (btnSend.IsEnabled)
+            //    enabledUIElements("both enable");
+            //btnBoundingBox.IsEnabled = true;
 
-            if (btnSend.IsEnabled)
-                enabledUIElements("both enable");
-            btnBoundingBox.IsEnabled = true;
+            currentTransition = GUITransitions.H1imgSlice;
+            handleGUIstates();
 
             //SystemSounds.Exclamation.Play();
         }
 
         private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
         {
-            txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}", countCmdSent, myPlot.GeneratedGCODE.Count);
+            txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
             btnPauseDrawing.IsEnabled = true;
             
             try
             {
-                //TODO add threading
                 //countCmdSent = 0 is set when an image is sliced
                 for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
                 {
@@ -150,6 +593,9 @@ namespace plottrBot
                     //countCmdSent = i;        //increment number of commands sent
                 }
                 txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+
+                currentTransition = GUITransitions.H5startDrawing;
+                handleGUIstates();
             }
             catch (Exception ex)
             {
@@ -159,14 +605,15 @@ namespace plottrBot
         }
         private async void btnSend_Click(object sender, RoutedEventArgs e)        //send cmd
         {
-            //txtOut.Text = "Sending";
-            //bool timedOut = sendSerialString(txtSerialCmd.Text + "\n");
+            bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
+            if (timedOut)
+                txtOut.Text += "Timed out\n";
+        }
 
-            txtOut.Text += "qwerty\n";
-
-            //bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
-            //if (timedOut)
-            //    txtOut.Text += "Timed out\n";
+        private void txtSerialCmd_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+                btnSend_Click(sender, e);
         }
 
         private bool sendSerialString(string message)       //not used anymore
@@ -286,7 +733,9 @@ namespace plottrBot
                 {
                     port.Close();
                     btnConnect.Content = "Connect USB";
-                    enabledUIElements("com disable");
+                    //enabledUIElements("com disable");
+                    currentTransition = GUITransitions.H4usbClose;
+                    handleGUIstates();
                 }
                 else
                 {
@@ -298,11 +747,13 @@ namespace plottrBot
                     port.StopBits = StopBits.One;
                     port.Open();
                     btnConnect.Content = "Disconnect";
-                    if(btnSliceImg.IsEnabled)
-                        enabledUIElements("both enable");
-                    else
-                        enabledUIElements("com enable");
-                }    
+                    //if(btnSliceImg.IsEnabled)
+                    //    enabledUIElements("both enable");
+                    //else
+                    //    enabledUIElements("com enable");
+                    currentTransition = GUITransitions.H3usbOpen;
+                    handleGUIstates();
+                }
             }
             catch (Exception ex)
             {
@@ -356,6 +807,8 @@ namespace plottrBot
             txtMoveX.Text = myPlot.ImgMoveX.ToString();
             txtMoveY.Text = myPlot.ImgMoveY.ToString();
         }
+
+        
 
         private void btnPauseDrawing_Click(object sender, RoutedEventArgs e)
         {
@@ -434,27 +887,37 @@ namespace plottrBot
             canvasPreview.Children.Add(selectedPreviewLine);
         }
 
-        private void btnSliderIncrease_Click(object sender, RoutedEventArgs e)
+
+        private void btnClearImg_Click(object sender, RoutedEventArgs e)
         {
-            sliderCmdCount.Value++;
+            myPlot = null;
+            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            canvasPreview.Background = System.Windows.Media.Brushes.White;
+            currentTransition = GUITransitions.H2imgClear;
+            handleGUIstates();
         }
 
-        private void txtCmdStart_LostFocus(object sender, RoutedEventArgs e)
+        private void btnSliderIncDec(object sender, RoutedEventArgs e)      //increases or decreases the slider by one based on button press
         {
-            try
-            {
-                sliderCmdCount.Value = Convert.ToInt32(txtCmdStart.Text);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-            }
+            if ((sender as Button).Content.ToString().Contains('<'))
+                sliderCmdCount.Value--;
+            else if ((sender as Button).Content.ToString().Contains('>'))
+                sliderCmdCount.Value++;
         }
 
-
-        private void btnSliderDecrease_Click(object sender, RoutedEventArgs e)
+        private void txtCmdStart_KeyDown(object sender, KeyEventArgs e)
         {
-            sliderCmdCount.Value--;
+            if(e.Key == Key.Return)
+            {
+                try
+                {
+                    sliderCmdCount.Value = Convert.ToInt32(txtCmdStart.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+            }
         }
 
 
@@ -517,10 +980,11 @@ namespace plottrBot
 
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));    //goes from home position
 
-            if ((bool)checkBoxDrawingBoundingBox.IsChecked)
-                await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z0\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
-            else
-                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
+            //if ((bool)checkBoxDrawingBoundingBox.IsChecked)
+            //    await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z0\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
+            //else
+            //    await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
+            await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z{2}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0, !(bool)checkBoxDrawingBoundingBox.IsChecked));    //draws first line
 
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y1));              //draws second line
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y1));  //draws third line
