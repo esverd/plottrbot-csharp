@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="983.604" Width="1637.44">
     <Grid Margin="8,0,-8,10">
-        <Canvas x:Name="canvasPreview" HorizontalAlignment="Left" Height="800" Margin="379,47,0,0" VerticalAlignment="Top" Width="1200" RenderTransformOrigin="0.481,0.251"/>
         <Border x:Name="borderPreview" BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="800" Margin="379,47,0,0" VerticalAlignment="Top" Width="1200"/>
+        <Canvas x:Name="canvasPreview" HorizontalAlignment="Left" Height="800" Margin="380,48,0,0" VerticalAlignment="Top" Width="1200" RenderTransformOrigin="0.481,0.251"/>
         <TabControl x:Name="tabControlOptions" HorizontalAlignment="Left" Height="827" Margin="22,20,0,0" VerticalAlignment="Top" Width="328" FontSize="14">
             <TabItem Header="Control" Width="162" Height="25">
                 <TabItem.Background>
@@ -19,7 +19,7 @@
                 </TabItem.Background>
                 <Grid Background="#FFFBFBFB" Margin="-2,-3,-2,-1">
                     <Grid Margin="-3,35,0,516" Grid.ColumnSpan="2">
-                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="265" Margin="0,16,-1,-34" VerticalAlignment="Top" Width="330"/>
+                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="252" Margin="0,16,-1,-21" VerticalAlignment="Top" Width="330"/>
                         <Button x:Name="btnSliceImg" Content="Slice image" HorizontalAlignment="Left" Margin="19,218,0,-5" VerticalAlignment="Top" Width="290" Click="btnSliceImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <Button x:Name="btnSelectImg" Content="Select image" HorizontalAlignment="Left" Margin="19,42,0,0" VerticalAlignment="Top" Width="290" Click="btnSelectImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <TextBox x:Name="txtMoveX" HorizontalAlignment="Left" Height="24" Margin="45,95,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="85" TextAlignment="Right" ToolTip="Position of top left image corner" FontSize="14"/>
@@ -53,7 +53,7 @@
                     </LinearGradientBrush>
                 </TabItem.Background>
                 <Grid Background="#FFFBFBFB" Margin="0,0,0,1">
-                    <TextBox x:Name="txtOut" HorizontalAlignment="Left" Height="136" Margin="16,633,0,0" TextWrapping="Wrap" Text="Status messages&#xD;&#xA;" VerticalAlignment="Top" Width="290" VerticalScrollBarVisibility="Visible" IsReadOnly="True"/>
+                    <TextBox x:Name="txtOut" HorizontalAlignment="Left" Height="136" Margin="16,633,0,0" TextWrapping="Wrap" Text="Status messages&#xA;" VerticalAlignment="Top" Width="290" VerticalScrollBarVisibility="Visible" IsReadOnly="True"/>
                     <Button x:Name="btnSend" Content="Send serial msg" HorizontalAlignment="Left" Margin="205,57,0,0" VerticalAlignment="Top" Width="101" Height="27" Click="btnSend_Click"/>
                     <TextBox x:Name="txtSerialCmd" HorizontalAlignment="Left" Margin="16,57,0,0" Width="184" Height="27" TextWrapping="Wrap" VerticalAlignment="Top" KeyDown="txtSerialCmd_KeyDown"/>
                     <CheckBox x:Name="checkBoxDrawingBoundingBox" Content="Use pen when indicating bounding box" HorizontalAlignment="Left" Margin="16,124,0,0" VerticalAlignment="Top" Height="21" FontSize="14" Width="290"/>
@@ -62,7 +62,7 @@
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,165,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,232,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,37,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
-                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,498,0,0" TextWrapping="Wrap" Text="G1 Z1&#xD;&#xA;G28&#xD;&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
+                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,498,0,0" TextWrapping="Wrap" Text="G1 Z1&#xA;G28&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
                     <TextBlock HorizontalAlignment="Left" Margin="16,479,0,0" TextWrapping="Wrap" Text="End GCODE" VerticalAlignment="Top"/>
                     <TextBox x:Name="txtCmdStart" HorizontalAlignment="Left" Height="27" Margin="16,252,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" TextAlignment="Right" Text="0" KeyDown="txtCmdStart_KeyDown"/>
                     <Button x:Name="btnCmdStart" Content="Start from cmd number" HorizontalAlignment="Left" Margin="142,252,0,0" VerticalAlignment="Top" Width="164" Click="btnCmdStart_Click" Height="27"/>

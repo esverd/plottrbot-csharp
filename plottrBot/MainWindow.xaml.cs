@@ -47,9 +47,14 @@ namespace plottrBot
             robotHeight = 1050; //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
             previewWidth = 1200;
             scaleToPreview = (double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
-            previewHeight = (int)(robotHeight * scaleToPreview);
-            borderPreview.Width = previewWidth;
-            borderPreview.Height = previewHeight;
+            previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
+
+            borderPreview.Width = previewWidth + 2;
+            borderPreview.Height = previewHeight + 2;
+
+            canvasPreview.Width = previewWidth;
+            canvasPreview.Height = previewHeight;
+
             tabControlOptions.Height = previewHeight + 25;
             
             //Plottr.ToolDiameter = 1.0;     //in mm     //TODO load from settings/assets
@@ -794,6 +799,9 @@ namespace plottrBot
 
         void placeImageAt(double x, double y)
         {
+            //if (x < 0) x = 0;
+            //if (y < 0) y = 0;
+
             canvasPreview.Children.Clear();     //removes potential preview lines already drawn
             ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
             previewImageBrush.Stretch = Stretch.Fill;

@@ -17,8 +17,27 @@ namespace plottrBot
         public List<TraceLine> BlackLines { get; private set; }     //stores all black lines to be drawn
         public List<TraceLine> AllLines { get; private set; }       //stores all movements as straight lines
         public List<string> GeneratedGCODE { get; set; }            //GCODE commands to be sent to the robot
-        public int ImgMoveX { get; set; }
-        public int ImgMoveY { get; set; }
+        
+        private int imgMoveX;
+        public int ImgMoveX 
+        { 
+            get { return imgMoveX; } 
+            set 
+            {
+                if (value < 0) imgMoveX = 0;
+                else imgMoveX = value;
+            } 
+        }
+        private int imgMoveY;
+        public int ImgMoveY
+        {
+            get { return imgMoveY; }
+            set
+            {
+                if (value < 0) imgMoveY = 0;
+                else imgMoveY = value;
+            }
+        }
         private Bitmap TempImg { get; set; }
         static public double ToolDiameter { get; set; }
         public double GetImgWidth { get { return Img.Width * (25.4 / 96); } }      //gets width in mm
