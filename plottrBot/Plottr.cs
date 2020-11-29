@@ -262,8 +262,8 @@ namespace plottrBot
             GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
             foreach (TraceLine line in AllLines)
             {
-                GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!line.Draw) + "\n");
-                GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", line.X1, line.Y1));
+                GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!line.Draw) + "\nL" + AllLines.IndexOf(line));
+                GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\nL{2}", line.X1, line.Y1, AllLines.IndexOf(line)));      //added L to save the line number, makes gui stuff easier in main window
             }
             GeneratedGCODE.Add(EndGCODE + "\n");
 

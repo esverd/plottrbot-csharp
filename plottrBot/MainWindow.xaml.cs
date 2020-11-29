@@ -48,7 +48,9 @@ namespace plottrBot
             //robotWidth = 1460;      //in mm     //TODO load from settings/assets
             //robotHeight = 550; //1050    //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
             Plottr.RobotWidth = 1460;
-            Plottr.RobotHeight = 1050;
+            Plottr.RobotHeight = 1200;
+
+            txtOut.Text = SystemParameters.VerticalScrollBarWidth.ToString();
 
             //previewWidth = 1200;
             scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
@@ -562,7 +564,7 @@ namespace plottrBot
 
             sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
 
-            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";      //takes a lot of time
+            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
 
             //previewing GCODE text is nice for debugging but super slow
             //foreach (string command in myPlot.GeneratedGCODE)
@@ -583,8 +585,9 @@ namespace plottrBot
         private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
         {
             txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
-            btnPauseDrawing.IsEnabled = true;
-            
+            currentTransition = GUITransitions.H5startDrawing;
+            handleGUIstates();
+
             try
             {
                 //countCmdSent = 0 is set when an image is sliced
@@ -592,18 +595,22 @@ namespace plottrBot
                 {
                     if (btnPauseDrawing.Content.ToString().Contains("Continue"))
                         break;
+
+                    string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
+                    if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
+                        sliderCmdCount.Value = lineNo;
+
                     bool timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
                     if (timedOut)
                     {
                         txtOut.Text += "Timed out\n";
                         //break;      //exits the for loop
                     }
+
                     //countCmdSent = i;        //increment number of commands sent
                 }
                 txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
-
-                currentTransition = GUITransitions.H5startDrawing;
-                handleGUIstates();
+                
             }
             catch (Exception ex)
             {
@@ -802,9 +809,6 @@ namespace plottrBot
 
         void placeImageAt(double x, double y)
         {
-            //if (x < 0) x = 0;
-            //if (y < 0) y = 0;
-
             canvasPreview.Children.Clear();     //removes potential preview lines already drawn
             ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
             previewImageBrush.Stretch = Stretch.Fill;
