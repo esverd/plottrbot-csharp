@@ -18,7 +18,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+using System.Xml;
+using Svg;
 
 namespace plottrBot
 {
@@ -312,22 +313,75 @@ namespace plottrBot
 
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image file (*.bmp) | *.bmp | Vector file (*.svg) | *.svg";
-            //bool result = (bool)openFileDialog.ShowDialog();
-            if ((bool)openFileDialog.ShowDialog())
+            try
             {
-                myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
+                //bool result = (bool)openFileDialog.ShowDialog();
+                if ((bool)openFileDialog.ShowDialog())
+                {
+                    if (openFileDialog.FileName.EndsWith(".bmp"))
+                    {
+                        myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
 
-                canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
+                        canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                        myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                        myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
 
-                //enables buttons that need the image to work
-                //enabledUIElements("img enable");
-                currentTransition = GUITransitions.H0imgOpen;
-                handleGUIstates();
+                        //enables buttons that need the image to work
+                        //enabledUIElements("img enable");
+                        currentTransition = GUITransitions.H0imgOpen;
+                        handleGUIstates();
+                    }
+                    else if (openFileDialog.FileName.EndsWith(".svg"))
+                    {
+                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
+                        PointF[] pointF = svgDoc.Path.PathPoints;
+
+                        //Ellipse currentDot = new Ellipse();
+                        //currentDot.Margin = new Thickness(500, 500, 0, 0);
+                        //currentDot.Fill = System.Windows.Media.Brushes.Black;
+                        //currentDot.Width = 2;
+                        //currentDot.Height = 2;
+                        //canvasPreview.Children.Add(currentDot);
+
+                        foreach (PointF point in pointF)
+                        {
+                            Ellipse currentDot = new Ellipse();
+                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                            currentDot.Fill = System.Windows.Media.Brushes.Black;
+                            currentDot.Width = 2;
+                            currentDot.Height = 2;
+                            canvasPreview.Children.Add(currentDot);
+                        }
+                        
+
+                        //System.Windows.Point currentPoint = new System.Windows.UIElement.Point();
+                        //currentPoint.X = 500;
+                        //currentPoint.Y = 500;
+                        //canvasPreview.Children.Add(currentPoint);
+
+                        //TraceLine topLeftToRight = new TraceLine(myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview);
+                        //Line myLine = new Line();
+                        //myLine.Stroke = System.Windows.Media.Brushes.Red;
+                        //myLine.StrokeThickness = 2;
+                        //myLine.X1 = topLeftToRight.X0;
+                        //myLine.Y1 = topLeftToRight.Y0;
+                        //myLine.X2 = topLeftToRight.X1;
+                        //myLine.Y2 = topLeftToRight.Y1;
+                        //canvasPreview.Children.Add(myLine);
+
+
+                    }
+                    else
+                        throw new Exception("Not supported file type");
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
+                MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
 
@@ -753,7 +807,7 @@ namespace plottrBot
             //txtOut.Text += myPlot.BoundingCoordinates.Y0 + "\n";
             //txtOut.Text += myPlot.BoundingCoordinates.X1 + "\n";
             //txtOut.Text += myPlot.BoundingCoordinates.Y1 + "\n";
-
+            
             TraceLine topLeftToRight = new TraceLine(myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview);
             TraceLine rightDown = new TraceLine(myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview);
             TraceLine downRightToLeft = new TraceLine(myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview, myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview);
