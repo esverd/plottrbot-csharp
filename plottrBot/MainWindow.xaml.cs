@@ -20,6 +20,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Xml;
 using Svg;
+using System.Drawing.Drawing2D;
+using System.IO;
 
 namespace plottrBot
 {
@@ -336,15 +338,134 @@ namespace plottrBot
                     }
                     else if (openFileDialog.FileName.EndsWith(".svg"))
                     {
-                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
-                        PointF[] pointF = svgDoc.Path.PathPoints;
 
-                        //Ellipse currentDot = new Ellipse();
-                        //currentDot.Margin = new Thickness(500, 500, 0, 0);
-                        //currentDot.Fill = System.Windows.Media.Brushes.Black;
-                        //currentDot.Width = 2;
-                        //currentDot.Height = 2;
-                        //canvasPreview.Children.Add(currentDot);
+                        //c# will split svg into following components: M, L, Z, C, Q
+                        //c# will then send these components as gcode to the robot
+                        //the robot will then read and handle the gcode calling on the necessary type ov movement function
+
+                        //G5 Q = quadratic ^2
+                        //G5 C = cubic ^3
+
+                        //svg commands:
+                        //m = G1 no draw
+                        //l = G1 draw
+                        //z = G1 draw
+                        //c = G5 C
+                        //q = G5 Q
+
+
+                        List<string> pathList = new List<string>();
+
+                        using (StreamReader innFil = new StreamReader(openFileDialog.FileName))
+                        {
+                            while (!innFil.EndOfStream)     //leser en linje så lenge vi ikke har nådd slutten av dokumentet
+                            {
+                                string currentLine = innFil.ReadLine();
+                                if (currentLine.Contains("<path "))
+                                    pathList.Add(currentLine);
+                            }
+                        }
+
+                        foreach (string path in pathList)
+                        {
+                            //txtOut.Text += path;
+                            string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);
+                            string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));
+                            txtOut.Text = cmd;
+
+                            //string testSplit = "a,b c,d e,f g";
+                            //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
+                            //foreach (string s in testSplit2)
+                            //    txtOut.Text += "\n" + s;
+
+                            List<string> gcodeList = new List<string>();
+
+                            string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
+                            for (int i = 0; i < cmdSplit.Length; i++)
+                            {
+                                switch (cmdSplit[i][0])
+                                {
+                                    case 'm':
+                                        cmdSplit[i].Replace('m', ' ');
+                                        gcodeList.Add("G1 Z0");
+                                        gcodeList.Add("G1 " + cmdSplit[i] + " " + cmdSplit[i + 1]);
+                                        i += 2;
+                                        break;
+                                    case 'l':
+                                        cmdSplit[i].Replace('l', ' ');
+                                        gcodeList.Add("G1 Z1");
+                                        gcodeList.Add("G1" + cmdSplit[i] + " " + cmdSplit[i + 1]);
+                                        i += 2;
+                                        break;
+                                    case 'z':
+                                        break;
+                                    case 'c':
+                                        cmdSplit[i].Replace('c', ' ');
+                                        gcodeList.Add("G1 Z1");
+                                        gcodeList.Add(string.Format("G5 c{0} {1} {2} {3} {4} {5}", 
+                                            cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3], cmdSplit[i + 4], cmdSplit[i + 5]));
+                                        i += 6;
+                                        break;
+                                    case 'q':
+                                        cmdSplit[i].Replace('q', ' ');
+                                        gcodeList.Add("G1 Z1");
+                                        gcodeList.Add(string.Format("G5 q{0} {1} {2} {3}",
+                                            cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3]));
+                                        i += 4;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+
+                            foreach (string s in gcodeList)
+                            {
+                                txtOut.Text += "\n" + s + "\n";
+                            }
+
+                            //m178.5,481.45313l95.5,-36.45313l29,53c0.5,0.45313 442.5,53.45313 210.5,-23.54688c-232,-77 190,-42 189.5,-42.45313
+                            //m
+                                //178.5,
+                                //481.45313
+                            //l
+                                //95.5,
+                                //-36.45313
+                            //l
+                                //29,
+                                //53
+                            //c
+                                //0.5,
+                                //0.45313 
+                                //442.5,
+                                //53.45313 
+                                //210.5,
+                                //-23.54688
+                            //c
+                                //-232,
+                                //-77 
+                                //190,
+                                //-42 
+                                //189.5,
+                                //-42.45313
+
+
+                            //string cmd = path.Substring(path.IndexOf("d\""), path.Skip(path.IndexOf("d\"")).ToString().IndexOf("\" ") - path.IndexOf("d\""));
+                            //txtOut.Text = cmd;
+
+                            //path.Skip(5).ToString().IndexOf
+                        }
+
+
+
+
+                        //svgDoc.Path.Flatten();
+
+                        //canvasPreview.Children.Add(svgDoc.Path);
+
+                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
+                        svgDoc.Path.Flatten();
+                        PointF[] pointF = svgDoc.Path.PathPoints;
+                        int nPoints = svgDoc.Path.PointCount;
 
                         foreach (PointF point in pointF)
                         {
@@ -355,7 +476,33 @@ namespace plottrBot
                             currentDot.Height = 2;
                             canvasPreview.Children.Add(currentDot);
                         }
+
                         
+
+                        //Path p = new Path();
+                        
+
+                        //canvasPreview.Children.Add(svgDoc.Path);
+
+                        //GraphicsPath myPath = new GraphicsPath();
+                        //Matrix translateMatrix = new Matrix();
+                        //translateMatrix.Translate(0, 10);
+                        //Point point1 = new Point(20, 100);
+                        //Point point2 = new Point(70, 10);
+                        //Point point3 = new Point(130, 200);
+                        //Point point4 = new Point(180, 100);
+                        //Point[] points = { point1, point2, point3, point4 };
+                        //myPath.AddCurve(points);
+                        //e.Graphics.DrawPath(new Pen(Color.Black, 2), myPath);
+                        //myPath.Flatten(translateMatrix, 10f);
+                        //e.Graphics.DrawPath(new Pen(Color.Red, 1), myPath);
+
+                        //Ellipse currentDot = new Ellipse();
+                        //currentDot.Margin = new Thickness(500, 500, 0, 0);
+                        //currentDot.Fill = System.Windows.Media.Brushes.Black;
+                        //currentDot.Width = 2;
+                        //currentDot.Height = 2;
+                        //canvasPreview.Children.Add(currentDot);
 
                         //System.Windows.Point currentPoint = new System.Windows.UIElement.Point();
                         //currentPoint.X = 500;

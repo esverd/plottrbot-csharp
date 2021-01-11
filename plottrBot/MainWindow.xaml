@@ -65,7 +65,7 @@
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,165,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,232,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
                     <GridSplitter HorizontalAlignment="Left" Height="1" Margin="10,37,0,0" VerticalAlignment="Top" Width="302" Background="#FFF0F0FA"/>
-                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,498,0,0" TextWrapping="Wrap" Text="G1 Z1&#xA;G28&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
+                    <TextBox x:Name="txtEndGcode" HorizontalAlignment="Left" Height="93" Margin="16,498,0,0" TextWrapping="Wrap" Text="G1 Z1&#xA;G28&#xD;&#xA;G1 Y1000&#xA;" VerticalAlignment="Top" Width="290" AcceptsReturn="True"/>
                     <TextBlock HorizontalAlignment="Left" Margin="16,479,0,0" TextWrapping="Wrap" Text="End GCODE" VerticalAlignment="Top"/>
                     <TextBox x:Name="txtCmdStart" HorizontalAlignment="Left" Height="27" Margin="16,252,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="121" TextAlignment="Right" Text="0" KeyDown="txtCmdStart_KeyDown"/>
                     <Button x:Name="btnCmdStart" Content="Start from cmd number" HorizontalAlignment="Left" Margin="142,252,0,0" VerticalAlignment="Top" Width="164" Click="btnCmdStart_Click" Height="27"/>
