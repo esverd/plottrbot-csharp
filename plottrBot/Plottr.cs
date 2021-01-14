@@ -392,5 +392,196 @@ namespace plottrBot
 
     }
 
+
+    class SVGPlottr
+    {
+        public char Command { get; set; }
+        public double[] PointValues { get; set; }
+        public string Filepath { get; set; }
+        public List<string> PathList { get; set; }
+
+        public List<string> GeneratedGCODE { get; set; }
+
+        //public List<string> GeneratedGCODE = new List<string>();
+
+        public SVGPlottr()
+        {
+        }
+
+        public SVGPlottr(string filepath)
+        {
+            Filepath = filepath;
+            PathList = new List<string>();
+            GeneratedGCODE = new List<string>();
+            pathsToGCODE();
+            //extract commands
+            //generate gcode
+        }
+
+        private void pathsToGCODE()
+        {
+            using (StreamReader innFil = new StreamReader(Filepath))
+            {
+                while (!innFil.EndOfStream)     //reads a line in txt document until end of file is reached
+                {
+                    string currentLine = innFil.ReadLine();
+                    if (currentLine.Contains("<path "))     //extracts line of related to describing a path
+                        PathList.Add(currentLine);
+                }
+            }
+
+            foreach (string path in PathList)
+            {
+                string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);       //<path id="svg_4" d="m178.5,481.45...
+                string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
+                //txtOut.Text = cmd + "\n";
+
+                //string testSplit = "a,b c,d e,f g";
+                //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
+                //foreach (string s in testSplit2)
+                //    txtOut.Text += "\n" + s;
+
+                List<int> commandIndex = new List<int>();
+                for (int i = 0; i < cmd.Length; i++)        //extracts all command locations in the path
+                {
+                    if (Char.IsLetter(cmd[i]))
+                    {
+                        commandIndex.Add(i);
+                        //txtOut.Text += cmd[i] + "\n";
+                    }
+                }
+
+                //for
+                //extract gcode (string = substring)
+                    //add to gcode list
+
+                for (int i = 0; i < commandIndex.Count; i++)
+                {
+                    if (i + 1 < commandIndex.Count)     //if not last item in loop
+                    {
+                        //extract gcode (string = substring)
+                        //add to gcode list
+                        string temp = cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i]);
+                        GeneratedGCODE.Add(GenerateGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i])));
+                    }
+                    else    //i + 1 = commandIndex.Count aka last object in list
+                    {
+                        //extract gcode (string = substring)
+                        //add to gcode list
+                        string temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
+                        GeneratedGCODE.Add(GenerateGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));
+                    }
+
+                }
+                GeneratedGCODE.Add("G1 Z1\n");
+
+                //string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
+
+            }
+
+        }
+
+        public string GenerateGCODE(string pathCommand)
+        {
+            string returnString = "";
+
+            char cmd = pathCommand[0];
+            pathCommand = pathCommand.Substring(1, pathCommand.Length - 1);
+            string[] cmdPointsString = pathCommand.Split(new char[] { ',', ' ' });
+            List<double> cmdPoints = new List<double>();
+
+            for (int i = 0; i < cmdPointsString.Length; i++)        //used to confirm each value is a number before GCODE is generated
+                cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]));
+
+            switch (cmd)
+            {
+                case 'm':
+                    returnString += "G1 Z1\n";
+                    returnString += String.Format("G1 {0:0.##} {1:0.##}", cmdPoints[0], cmdPoints[1]);
+                    break;
+                case 'l':
+                    returnString += "G1 Z0\n";
+                    returnString += String.Format("G1 {0:0.##} {1:0.##}", cmdPoints[0], cmdPoints[1]);
+                    break;
+                case 'z':
+                    break;
+                case 'c':
+                    returnString += String.Format("G5 c {0:0.##} {1:0.##} {2:0.##} {3:0.##} {4:0.##} {5:0.##}",
+                        cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
+                    break;
+                case 'q':
+                    returnString += String.Format("G5 q {0:0.##} {1:0.##} {2:0.##} {3:0.##}",
+                        cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
+                    break;
+                default:
+                    break;
+            }
+
+            return returnString;
+
+        }
+
+
+
+        //public SVGPlottr(char command, double x1, double y1)     //M L
+        //{
+        //    Command = command;
+        //    PointValues[0] = x1;
+        //    PointValues[1] = y1;
+        //}
+
+        //public SVGPlottr(char command, double x1, double y1, double x, double y)     //Q
+        //{
+        //    Command = command;
+        //    PointValues[0] = x1;
+        //    PointValues[1] = y1;
+        //    PointValues[2] = x;
+        //    PointValues[3] = y;
+        //}
+
+        //public SVGPlottr(char command, double x1, double y1, double x2, double y2, double x, double y)     //C
+        //{
+        //    Command = command;
+        //    PointValues[0] = x1;
+        //    PointValues[1] = y1;
+        //    PointValues[2] = x2;
+        //    PointValues[3] = y2;
+        //    PointValues[4] = x;
+        //    PointValues[5] = y;
+        //}
+
+        //public string CmdToString()
+        //{
+        //    string returnString = "";
+
+        //    switch (Command)
+        //    {
+        //        case 'm':
+        //            returnString += "G1 Z1\n";
+        //            returnString += String.Format("G1 {0} {1}", PointValues[0], PointValues[1]);
+        //            break;
+        //        case 'l':
+        //            returnString += "G1 Z0\n";
+        //            returnString += String.Format("G1 {0} {1}", PointValues[0], PointValues[1]);
+        //            break;
+        //        case 'z':
+        //            break;
+        //        case 'c':
+        //            returnString += String.Format("G5 c {0} {1} {2} {3} {4} {5}", 
+        //                PointValues[0], PointValues[1], PointValues[2], PointValues[3], PointValues[4], PointValues[5]);
+        //            break;
+        //        case 'q':
+        //            returnString += String.Format("G5 q {0} {1} {2} {3}",
+        //                PointValues[0], PointValues[1], PointValues[2], PointValues[3]);
+        //            break;
+        //        default:
+        //            break;
+        //    }
+
+        //    return returnString;
+        //}
+
+    }
+
 }
 

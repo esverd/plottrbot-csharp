@@ -343,6 +343,12 @@ namespace plottrBot
                         //c# will then send these components as gcode to the robot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
+                        SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
+                        foreach (string item in svgPlottr.GeneratedGCODE)
+                        {
+                            txtOut.Text += item + "\n";
+                        }
+
                         //G5 Q = quadratic ^2
                         //G5 C = cubic ^3
 
@@ -354,106 +360,144 @@ namespace plottrBot
                         //q = G5 Q
 
 
-                        List<string> pathList = new List<string>();
+                        //List<string> pathList = new List<string>();
 
-                        using (StreamReader innFil = new StreamReader(openFileDialog.FileName))
-                        {
-                            while (!innFil.EndOfStream)     //leser en linje så lenge vi ikke har nådd slutten av dokumentet
-                            {
-                                string currentLine = innFil.ReadLine();
-                                if (currentLine.Contains("<path "))
-                                    pathList.Add(currentLine);
-                            }
-                        }
+                        //using (StreamReader innFil = new StreamReader(openFileDialog.FileName))
+                        //{
+                        //    while (!innFil.EndOfStream)     //leser en linje så lenge vi ikke har nådd slutten av dokumentet
+                        //    {
+                        //        string currentLine = innFil.ReadLine();
+                        //        if (currentLine.Contains("<path "))     //extracts line of related to describing a path
+                        //            pathList.Add(currentLine);
+                        //    }
+                        //}
 
-                        foreach (string path in pathList)
-                        {
-                            //txtOut.Text += path;
-                            string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);
-                            string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));
-                            txtOut.Text = cmd;
+                        //foreach (string path in pathList)
+                        //{
+                        //    //txtOut.Text += path;
+                        //    string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);
+                        //    string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
+                        //    txtOut.Text = cmd + "\n";
 
-                            //string testSplit = "a,b c,d e,f g";
-                            //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
-                            //foreach (string s in testSplit2)
-                            //    txtOut.Text += "\n" + s;
-
-                            List<string> gcodeList = new List<string>();
-
-                            string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
-                            for (int i = 0; i < cmdSplit.Length; i++)
-                            {
-                                switch (cmdSplit[i][0])
-                                {
-                                    case 'm':
-                                        cmdSplit[i].Replace('m', ' ');
-                                        gcodeList.Add("G1 Z0");
-                                        gcodeList.Add("G1 " + cmdSplit[i] + " " + cmdSplit[i + 1]);
-                                        i += 2;
-                                        break;
-                                    case 'l':
-                                        cmdSplit[i].Replace('l', ' ');
-                                        gcodeList.Add("G1 Z1");
-                                        gcodeList.Add("G1" + cmdSplit[i] + " " + cmdSplit[i + 1]);
-                                        i += 2;
-                                        break;
-                                    case 'z':
-                                        break;
-                                    case 'c':
-                                        cmdSplit[i].Replace('c', ' ');
-                                        gcodeList.Add("G1 Z1");
-                                        gcodeList.Add(string.Format("G5 c{0} {1} {2} {3} {4} {5}", 
-                                            cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3], cmdSplit[i + 4], cmdSplit[i + 5]));
-                                        i += 6;
-                                        break;
-                                    case 'q':
-                                        cmdSplit[i].Replace('q', ' ');
-                                        gcodeList.Add("G1 Z1");
-                                        gcodeList.Add(string.Format("G5 q{0} {1} {2} {3}",
-                                            cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3]));
-                                        i += 4;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-
-                            foreach (string s in gcodeList)
-                            {
-                                txtOut.Text += "\n" + s + "\n";
-                            }
-
-                            //m178.5,481.45313l95.5,-36.45313l29,53c0.5,0.45313 442.5,53.45313 210.5,-23.54688c-232,-77 190,-42 189.5,-42.45313
-                            //m
-                                //178.5,
-                                //481.45313
-                            //l
-                                //95.5,
-                                //-36.45313
-                            //l
-                                //29,
-                                //53
-                            //c
-                                //0.5,
-                                //0.45313 
-                                //442.5,
-                                //53.45313 
-                                //210.5,
-                                //-23.54688
-                            //c
-                                //-232,
-                                //-77 
-                                //190,
-                                //-42 
-                                //189.5,
-                                //-42.45313
+                        //    //string testSplit = "a,b c,d e,f g";
+                        //    //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
+                        //    //foreach (string s in testSplit2)
+                        //    //    txtOut.Text += "\n" + s;
 
 
-                            //string cmd = path.Substring(path.IndexOf("d\""), path.Skip(path.IndexOf("d\"")).ToString().IndexOf("\" ") - path.IndexOf("d\""));
-                            //txtOut.Text = cmd;
 
-                            //path.Skip(5).ToString().IndexOf
-                        }
+                        //    List<int> commandIndex = new List<int>();
+                        //    for (int i = 0; i < cmd.Length; i++)
+                        //    {
+                        //        if (Char.IsLetter(cmd[i]))
+                        //        {
+                        //            commandIndex.Add(i);
+                        //            txtOut.Text += cmd[i] + "\n";
+                        //        }
+                        //    }
+
+                        //    string shortenCmd = cmd;
+                        //    for (int i = 0; i < commandIndex.Count; i++)
+                        //    {
+                        //        if (i + 1 < commandIndex.Count)     //if not last item in loop
+                        //        {
+                        //            //extract gcode (string = substring)
+                        //            //add to gcode list
+                        //            string temp = cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i]);
+                        //            txtOut.Text += SVGPlottr.GenerateGCODE(temp) + "\n";
+                        //        }
+                        //        else    //i + 1 = commandIndex.Count aka last object in list
+                        //        {
+                        //            //extract gcode (string = substring)
+                        //            //add to gcode list
+                        //            string temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
+                        //            txtOut.Text += SVGPlottr.GenerateGCODE(temp) + "\n";
+                        //        }
+
+                        //    }
+
+                        //foreach (int cmdIndex in commandIndex)
+                        //{
+                        //    //SVGcommand svgCmd = new SVGcommand
+                        //}
+
+
+                        //List<string> gcodeList = new List<string>();
+
+                        //string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
+                        //for (int i = 0; i < cmdSplit.Length; i++)
+                        //{
+                        //    switch (cmdSplit[i][0])
+                        //    {
+                        //        case 'm':
+                        //            cmdSplit[i].Replace('m', ' ');
+                        //            gcodeList.Add("G1 Z0");
+                        //            gcodeList.Add("G1 " + cmdSplit[i] + " " + cmdSplit[i + 1]);
+                        //            i += 2;
+                        //            break;
+                        //        case 'l':
+                        //            cmdSplit[i].Replace('l', ' ');
+                        //            gcodeList.Add("G1 Z1");
+                        //            gcodeList.Add("G1" + cmdSplit[i] + " " + cmdSplit[i + 1]);
+                        //            i += 2;
+                        //            break;
+                        //        case 'z':
+                        //            break;
+                        //        case 'c':
+                        //            cmdSplit[i].Replace('c', ' ');
+                        //            gcodeList.Add("G1 Z1");
+                        //            gcodeList.Add(string.Format("G5 c{0} {1} {2} {3} {4} {5}", 
+                        //                cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3], cmdSplit[i + 4], cmdSplit[i + 5]));
+                        //            i += 6;
+                        //            break;
+                        //        case 'q':
+                        //            cmdSplit[i].Replace('q', ' ');
+                        //            gcodeList.Add("G1 Z1");
+                        //            gcodeList.Add(string.Format("G5 q{0} {1} {2} {3}",
+                        //                cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3]));
+                        //            i += 4;
+                        //            break;
+                        //        default:
+                        //            break;
+                        //    }
+                        //}
+
+                        //foreach (string s in gcodeList)
+                        //{
+                        //    txtOut.Text += "\n" + s + "\n";
+                        //}
+
+                        //m178.5,481.45313l95.5,-36.45313l29,53c0.5,0.45313 442.5,53.45313 210.5,-23.54688c-232,-77 190,-42 189.5,-42.45313
+                        //m
+                        //178.5,
+                        //481.45313
+                        //l
+                        //95.5,
+                        //-36.45313
+                        //l
+                        //29,
+                        //53
+                        //c
+                        //0.5,
+                        //0.45313 
+                        //442.5,
+                        //53.45313 
+                        //210.5,
+                        //-23.54688
+                        //c
+                        //-232,
+                        //-77 
+                        //190,
+                        //-42 
+                        //189.5,
+                        //-42.45313
+
+
+                        //string cmd = path.Substring(path.IndexOf("d\""), path.Skip(path.IndexOf("d\"")).ToString().IndexOf("\" ") - path.IndexOf("d\""));
+                        //txtOut.Text = cmd;
+
+                        //path.Skip(5).ToString().IndexOf
+                        //}
 
 
 
