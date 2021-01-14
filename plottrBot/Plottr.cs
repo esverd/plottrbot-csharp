@@ -9,27 +9,27 @@ using System.Windows.Media.Imaging;
 
 namespace plottrBot
 {
+
     class Plottr
     {
-
-        public BitmapImage Img { get; private set; }
-        private bool[,] pixelArray { get; set; }        //array used for storing white/black pixels as true/false
-        public List<TraceLine> BlackLines { get; private set; }     //stores all black lines to be drawn
-        public List<TraceLine> AllLines { get; private set; }       //stores all movements as straight lines
+        static public int RobotWidth { get; set; }
+        static public int RobotHeight { get; set; }
         public List<string> GeneratedGCODE { get; set; }            //GCODE commands to be sent to the robot
-        
-        private int imgMoveX;
-        public int ImgMoveX 
-        { 
-            get { return imgMoveX; } 
-            set 
+        static public string StartGCODE { get; set; }      //gcode that runs before the drawing starts
+        static public string EndGCODE { get; set; }        //gcode that runs when the drawing has finished
+
+        static private int imgMoveX;
+        static public int ImgMoveX
+        {
+            get { return imgMoveX; }
+            set
             {
                 if (value < 0) imgMoveX = 0;
                 else imgMoveX = value;
-            } 
+            }
         }
-        private int imgMoveY;
-        public int ImgMoveY
+        static private int imgMoveY;
+        static public int ImgMoveY
         {
             get { return imgMoveY; }
             set
@@ -38,6 +38,21 @@ namespace plottrBot
                 else imgMoveY = value;
             }
         }
+
+        public void GenerateGCODE()
+        {
+
+        }
+
+    }
+
+    class PlottrBMP : Plottr
+    {
+        public BitmapImage Img { get; private set; }
+        private bool[,] pixelArray { get; set; }        //array used for storing white/black pixels as true/false
+        public List<TraceLine> BlackLines { get; private set; }     //stores all black lines to be drawn
+        public List<TraceLine> AllLines { get; private set; }       //stores all movements as straight lines
+        
         private Bitmap TempImg { get; set; }
         static public double ToolDiameter { get; set; }
         public double GetImgWidth { get { return Img.Width * (25.4 / 96); } }      //gets width in mm
@@ -48,15 +63,10 @@ namespace plottrBot
         private double ratioHeightToPx { get; set; }
         private int pxArrayWidth { get; set; }
         private int pxArrayHeight { get; set; }
-        public string StartGCODE { get; set; }      //gcode that runs before the drawing starts
-        public string EndGCODE { get; set; }        //gcode that runs when the drawing has finished
-
+        
         static public bool TimedOut { get; set; }
-        static public int RobotWidth { get; set; }
-        static public int RobotHeight { get; set; }
-
-
-        public Plottr(string filename)
+        
+        public PlottrBMP(string filename)
         {
             Img = new BitmapImage(new Uri(filename, UriKind.Absolute));
             TempImg = new Bitmap(filename);
@@ -393,14 +403,14 @@ namespace plottrBot
     }
 
 
-    class SVGPlottr
+    class SVGPlottr : Plottr
     {
         public char Command { get; set; }
         public double[] PointValues { get; set; }
         public string Filepath { get; set; }
         public List<string> PathList { get; set; }
-
-        public List<string> GeneratedGCODE { get; set; }
+        private double relativeToAbsX { get; set; }
+        private double relativeToAbsY { get; set; }
 
         //public List<string> GeneratedGCODE = new List<string>();
 
@@ -411,14 +421,14 @@ namespace plottrBot
         public SVGPlottr(string filepath)
         {
             Filepath = filepath;
+            relativeToAbsX = 0;
+            relativeToAbsY = 0;
             PathList = new List<string>();
             GeneratedGCODE = new List<string>();
-            pathsToGCODE();
-            //extract commands
-            //generate gcode
+            GenerateGCODE();
         }
 
-        private void pathsToGCODE()
+        public void GenerateGCODE()
         {
             using (StreamReader innFil = new StreamReader(Filepath))
             {
@@ -430,16 +440,11 @@ namespace plottrBot
                 }
             }
 
+            GeneratedGCODE.Add(StartGCODE + "\n");
             foreach (string path in PathList)
             {
                 string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);       //<path id="svg_4" d="m178.5,481.45...
                 string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
-                //txtOut.Text = cmd + "\n";
-
-                //string testSplit = "a,b c,d e,f g";
-                //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
-                //foreach (string s in testSplit2)
-                //    txtOut.Text += "\n" + s;
 
                 List<int> commandIndex = new List<int>();
                 for (int i = 0; i < cmd.Length; i++)        //extracts all command locations in the path
@@ -451,37 +456,19 @@ namespace plottrBot
                     }
                 }
 
-                //for
-                //extract gcode (string = substring)
-                    //add to gcode list
-
                 for (int i = 0; i < commandIndex.Count; i++)
                 {
                     if (i + 1 < commandIndex.Count)     //if not last item in loop
-                    {
-                        //extract gcode (string = substring)
-                        //add to gcode list
-                        string temp = cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i]);
-                        GeneratedGCODE.Add(GenerateGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i])));
-                    }
+                        GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i])));
                     else    //i + 1 = commandIndex.Count aka last object in list
-                    {
-                        //extract gcode (string = substring)
-                        //add to gcode list
-                        string temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
-                        GeneratedGCODE.Add(GenerateGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));
-                    }
-
+                        GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));
                 }
                 GeneratedGCODE.Add("G1 Z1\n");
-
-                //string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
-
             }
-
+            GeneratedGCODE.Add(EndGCODE + "\n");
         }
 
-        public string GenerateGCODE(string pathCommand)
+        private string pathCommandToGCODE(string pathCommand)
         {
             string returnString = "";
 
@@ -491,7 +478,19 @@ namespace plottrBot
             List<double> cmdPoints = new List<double>();
 
             for (int i = 0; i < cmdPointsString.Length; i++)        //used to confirm each value is a number before GCODE is generated
-                cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]));
+            {
+                //i really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
+                if (i % 2 == 0)     
+                {
+                    cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]) + ImgMoveX + relativeToAbsX);
+                    relativeToAbsX += cmdPoints[i] - ImgMoveX;
+                }
+                else
+                {
+                    cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]) + ImgMoveY + relativeToAbsY);
+                    relativeToAbsY += cmdPoints[i] - ImgMoveY;
+                }
+            }
 
             switch (cmd)
             {
@@ -506,11 +505,11 @@ namespace plottrBot
                 case 'z':
                     break;
                 case 'c':
-                    returnString += String.Format("G5 c {0:0.##} {1:0.##} {2:0.##} {3:0.##} {4:0.##} {5:0.##}",
+                    returnString += String.Format("G5 C {0:0.##} {1:0.##} {2:0.##} {3:0.##} {4:0.##} {5:0.##}",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
                     break;
                 case 'q':
-                    returnString += String.Format("G5 q {0:0.##} {1:0.##} {2:0.##} {3:0.##}",
+                    returnString += String.Format("G5 Q {0:0.##} {1:0.##} {2:0.##} {3:0.##}",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
                     break;
                 default:
@@ -520,66 +519,6 @@ namespace plottrBot
             return returnString;
 
         }
-
-
-
-        //public SVGPlottr(char command, double x1, double y1)     //M L
-        //{
-        //    Command = command;
-        //    PointValues[0] = x1;
-        //    PointValues[1] = y1;
-        //}
-
-        //public SVGPlottr(char command, double x1, double y1, double x, double y)     //Q
-        //{
-        //    Command = command;
-        //    PointValues[0] = x1;
-        //    PointValues[1] = y1;
-        //    PointValues[2] = x;
-        //    PointValues[3] = y;
-        //}
-
-        //public SVGPlottr(char command, double x1, double y1, double x2, double y2, double x, double y)     //C
-        //{
-        //    Command = command;
-        //    PointValues[0] = x1;
-        //    PointValues[1] = y1;
-        //    PointValues[2] = x2;
-        //    PointValues[3] = y2;
-        //    PointValues[4] = x;
-        //    PointValues[5] = y;
-        //}
-
-        //public string CmdToString()
-        //{
-        //    string returnString = "";
-
-        //    switch (Command)
-        //    {
-        //        case 'm':
-        //            returnString += "G1 Z1\n";
-        //            returnString += String.Format("G1 {0} {1}", PointValues[0], PointValues[1]);
-        //            break;
-        //        case 'l':
-        //            returnString += "G1 Z0\n";
-        //            returnString += String.Format("G1 {0} {1}", PointValues[0], PointValues[1]);
-        //            break;
-        //        case 'z':
-        //            break;
-        //        case 'c':
-        //            returnString += String.Format("G5 c {0} {1} {2} {3} {4} {5}", 
-        //                PointValues[0], PointValues[1], PointValues[2], PointValues[3], PointValues[4], PointValues[5]);
-        //            break;
-        //        case 'q':
-        //            returnString += String.Format("G5 q {0} {1} {2} {3}",
-        //                PointValues[0], PointValues[1], PointValues[2], PointValues[3]);
-        //            break;
-        //        default:
-        //            break;
-        //    }
-
-        //    return returnString;
-        //}
 
     }
 

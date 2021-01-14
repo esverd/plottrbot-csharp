@@ -30,7 +30,7 @@ namespace plottrBot
     /// </summary>
     public partial class MainWindow : Window
     {
-        Plottr myPlot;          //the object from the custom Plottr class
+        PlottrBMP myPlot;          //the object from the custom Plottr class
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
         //int robotWidth, robotHeight;  //previewWidth, previewHeight
@@ -50,13 +50,13 @@ namespace plottrBot
 
             //robotWidth = 1460;      //in mm     //TODO load from settings/assets
             //robotHeight = 550; //1050    //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
-            Plottr.RobotWidth = 1460;
-            Plottr.RobotHeight = 1200;
+            PlottrBMP.RobotWidth = 1460;
+            PlottrBMP.RobotHeight = 1200;
 
             //previewWidth = 1200;
-            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            scaleToPreview = (double)canvasPreview.Width / (double)PlottrBMP.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
             //previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
-            canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+            canvasPreview.Height = PlottrBMP.RobotHeight * scaleToPreview;
 
             //borderPreview.Width = previewWidth + 2;
             //borderPreview.Height = previewHeight + 2;
@@ -72,6 +72,9 @@ namespace plottrBot
 
             currentState = GUIStates.T0blank;
             updateGUIelements();
+
+            Plottr.StartGCODE = "G1 Z1\n";
+            Plottr.EndGCODE = txtEndGcode.Text + "\n";
 
         }
 
@@ -324,12 +327,12 @@ namespace plottrBot
                 {
                     if (openFileDialog.FileName.EndsWith(".bmp"))
                     {
-                        myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
+                        myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
 
                         canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-                        myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                        myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                        placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
+                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
 
                         //enables buttons that need the image to work
                         //enabledUIElements("img enable");
@@ -349,6 +352,11 @@ namespace plottrBot
                             txtOut.Text += item + "\n";
                         }
 
+                        //still needs:
+                        //-scaling of point values
+                        //- moving of curve on preview
+                        //-preview
+
                         //G5 Q = quadratic ^2
                         //G5 C = cubic ^3
 
@@ -360,151 +368,6 @@ namespace plottrBot
                         //q = G5 Q
 
 
-                        //List<string> pathList = new List<string>();
-
-                        //using (StreamReader innFil = new StreamReader(openFileDialog.FileName))
-                        //{
-                        //    while (!innFil.EndOfStream)     //leser en linje så lenge vi ikke har nådd slutten av dokumentet
-                        //    {
-                        //        string currentLine = innFil.ReadLine();
-                        //        if (currentLine.Contains("<path "))     //extracts line of related to describing a path
-                        //            pathList.Add(currentLine);
-                        //    }
-                        //}
-
-                        //foreach (string path in pathList)
-                        //{
-                        //    //txtOut.Text += path;
-                        //    string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);
-                        //    string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
-                        //    txtOut.Text = cmd + "\n";
-
-                        //    //string testSplit = "a,b c,d e,f g";
-                        //    //string[] testSplit2 = testSplit.Split(new char[] { ',', ' ' });
-                        //    //foreach (string s in testSplit2)
-                        //    //    txtOut.Text += "\n" + s;
-
-
-
-                        //    List<int> commandIndex = new List<int>();
-                        //    for (int i = 0; i < cmd.Length; i++)
-                        //    {
-                        //        if (Char.IsLetter(cmd[i]))
-                        //        {
-                        //            commandIndex.Add(i);
-                        //            txtOut.Text += cmd[i] + "\n";
-                        //        }
-                        //    }
-
-                        //    string shortenCmd = cmd;
-                        //    for (int i = 0; i < commandIndex.Count; i++)
-                        //    {
-                        //        if (i + 1 < commandIndex.Count)     //if not last item in loop
-                        //        {
-                        //            //extract gcode (string = substring)
-                        //            //add to gcode list
-                        //            string temp = cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i]);
-                        //            txtOut.Text += SVGPlottr.GenerateGCODE(temp) + "\n";
-                        //        }
-                        //        else    //i + 1 = commandIndex.Count aka last object in list
-                        //        {
-                        //            //extract gcode (string = substring)
-                        //            //add to gcode list
-                        //            string temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
-                        //            txtOut.Text += SVGPlottr.GenerateGCODE(temp) + "\n";
-                        //        }
-
-                        //    }
-
-                        //foreach (int cmdIndex in commandIndex)
-                        //{
-                        //    //SVGcommand svgCmd = new SVGcommand
-                        //}
-
-
-                        //List<string> gcodeList = new List<string>();
-
-                        //string[] cmdSplit = cmd.Split(new char[] { ',', ' ' });
-                        //for (int i = 0; i < cmdSplit.Length; i++)
-                        //{
-                        //    switch (cmdSplit[i][0])
-                        //    {
-                        //        case 'm':
-                        //            cmdSplit[i].Replace('m', ' ');
-                        //            gcodeList.Add("G1 Z0");
-                        //            gcodeList.Add("G1 " + cmdSplit[i] + " " + cmdSplit[i + 1]);
-                        //            i += 2;
-                        //            break;
-                        //        case 'l':
-                        //            cmdSplit[i].Replace('l', ' ');
-                        //            gcodeList.Add("G1 Z1");
-                        //            gcodeList.Add("G1" + cmdSplit[i] + " " + cmdSplit[i + 1]);
-                        //            i += 2;
-                        //            break;
-                        //        case 'z':
-                        //            break;
-                        //        case 'c':
-                        //            cmdSplit[i].Replace('c', ' ');
-                        //            gcodeList.Add("G1 Z1");
-                        //            gcodeList.Add(string.Format("G5 c{0} {1} {2} {3} {4} {5}", 
-                        //                cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3], cmdSplit[i + 4], cmdSplit[i + 5]));
-                        //            i += 6;
-                        //            break;
-                        //        case 'q':
-                        //            cmdSplit[i].Replace('q', ' ');
-                        //            gcodeList.Add("G1 Z1");
-                        //            gcodeList.Add(string.Format("G5 q{0} {1} {2} {3}",
-                        //                cmdSplit[i], cmdSplit[i + 1], cmdSplit[i + 2], cmdSplit[i + 3]));
-                        //            i += 4;
-                        //            break;
-                        //        default:
-                        //            break;
-                        //    }
-                        //}
-
-                        //foreach (string s in gcodeList)
-                        //{
-                        //    txtOut.Text += "\n" + s + "\n";
-                        //}
-
-                        //m178.5,481.45313l95.5,-36.45313l29,53c0.5,0.45313 442.5,53.45313 210.5,-23.54688c-232,-77 190,-42 189.5,-42.45313
-                        //m
-                        //178.5,
-                        //481.45313
-                        //l
-                        //95.5,
-                        //-36.45313
-                        //l
-                        //29,
-                        //53
-                        //c
-                        //0.5,
-                        //0.45313 
-                        //442.5,
-                        //53.45313 
-                        //210.5,
-                        //-23.54688
-                        //c
-                        //-232,
-                        //-77 
-                        //190,
-                        //-42 
-                        //189.5,
-                        //-42.45313
-
-
-                        //string cmd = path.Substring(path.IndexOf("d\""), path.Skip(path.IndexOf("d\"")).ToString().IndexOf("\" ") - path.IndexOf("d\""));
-                        //txtOut.Text = cmd;
-
-                        //path.Skip(5).ToString().IndexOf
-                        //}
-
-
-
-
-                        //svgDoc.Path.Flatten();
-
-                        //canvasPreview.Children.Add(svgDoc.Path);
 
                         var svgDoc = SvgDocument.Open(openFileDialog.FileName);
                         svgDoc.Path.Flatten();
@@ -522,46 +385,6 @@ namespace plottrBot
                         }
 
                         
-
-                        //Path p = new Path();
-                        
-
-                        //canvasPreview.Children.Add(svgDoc.Path);
-
-                        //GraphicsPath myPath = new GraphicsPath();
-                        //Matrix translateMatrix = new Matrix();
-                        //translateMatrix.Translate(0, 10);
-                        //Point point1 = new Point(20, 100);
-                        //Point point2 = new Point(70, 10);
-                        //Point point3 = new Point(130, 200);
-                        //Point point4 = new Point(180, 100);
-                        //Point[] points = { point1, point2, point3, point4 };
-                        //myPath.AddCurve(points);
-                        //e.Graphics.DrawPath(new Pen(Color.Black, 2), myPath);
-                        //myPath.Flatten(translateMatrix, 10f);
-                        //e.Graphics.DrawPath(new Pen(Color.Red, 1), myPath);
-
-                        //Ellipse currentDot = new Ellipse();
-                        //currentDot.Margin = new Thickness(500, 500, 0, 0);
-                        //currentDot.Fill = System.Windows.Media.Brushes.Black;
-                        //currentDot.Width = 2;
-                        //currentDot.Height = 2;
-                        //canvasPreview.Children.Add(currentDot);
-
-                        //System.Windows.Point currentPoint = new System.Windows.UIElement.Point();
-                        //currentPoint.X = 500;
-                        //currentPoint.Y = 500;
-                        //canvasPreview.Children.Add(currentPoint);
-
-                        //TraceLine topLeftToRight = new TraceLine(myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview);
-                        //Line myLine = new Line();
-                        //myLine.Stroke = System.Windows.Media.Brushes.Red;
-                        //myLine.StrokeThickness = 2;
-                        //myLine.X1 = topLeftToRight.X0;
-                        //myLine.Y1 = topLeftToRight.Y0;
-                        //myLine.X2 = topLeftToRight.X1;
-                        //myLine.Y2 = topLeftToRight.Y1;
-                        //canvasPreview.Children.Add(myLine);
 
 
                     }
@@ -581,8 +404,8 @@ namespace plottrBot
             countCmdSent = 0;   //0;
 
             //read start and end gcode from text boxes
-            myPlot.StartGCODE = "G1 Z1\n";
-            myPlot.EndGCODE = txtEndGcode.Text + "\n";
+            //Plottr.StartGCODE = "G1 Z1\n";
+            //Plottr.EndGCODE = txtEndGcode.Text + "\n";
             //myPlot.GeneratedGCODE.Clear();
             //canvasPreview.Children.Clear();
 
@@ -832,25 +655,25 @@ namespace plottrBot
 
         private void btnMoveImg_Click(object sender, RoutedEventArgs e)
         {
-            myPlot.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
-            myPlot.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
-            placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+            Plottr.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
+            Plottr.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
+            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
         }
 
         private void btnCenterImg_Click(object sender, RoutedEventArgs e)
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
-                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+                Plottr.ImgMoveX = Convert.ToInt32((PlottrBMP.RobotWidth - myPlot.GetImgWidth) / 2);
+                Plottr.ImgMoveY = Convert.ToInt32((PlottrBMP.RobotHeight - myPlot.GetImgHeight) / 2);
+                placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                 btnCenterImg.Content = "Move top left";
             }
             else if (btnCenterImg.Content.ToString().Contains("top left"))
             {
-                myPlot.ImgMoveX = 0;
-                myPlot.ImgMoveY = 0;
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+                Plottr.ImgMoveX = 0;
+                Plottr.ImgMoveY = 0;
+                placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                 btnCenterImg.Content = "Center image";
             }   
         }
@@ -867,8 +690,8 @@ namespace plottrBot
 
             //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
             canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
-            txtMoveX.Text = myPlot.ImgMoveX.ToString();
-            txtMoveY.Text = myPlot.ImgMoveY.ToString();
+            txtMoveX.Text = Plottr.ImgMoveX.ToString();
+            txtMoveY.Text = Plottr.ImgMoveY.ToString();
         }
 
         
