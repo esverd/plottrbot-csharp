@@ -425,26 +425,53 @@ namespace plottrBot
             relativeToAbsY = 0;
             PathList = new List<string>();
             GeneratedGCODE = new List<string>();
+            getAllPaths();
             GenerateGCODE();
         }
-
-        public void GenerateGCODE()
+        public string outPathString { get; set; }
+        private void getAllPaths()
         {
             using (StreamReader innFil = new StreamReader(Filepath))
             {
                 while (!innFil.EndOfStream)     //reads a line in txt document until end of file is reached
                 {
                     string currentLine = innFil.ReadLine();
-                    if (currentLine.Contains("<path "))     //extracts line of related to describing a path
-                        PathList.Add(currentLine);
+                    string pathString = "";
+                    if (currentLine.Contains("<path"))     //extracts line of related to describing a path
+                    {
+                        //pathString += currentLine;
+                        while(!currentLine.Contains("/>"))
+                        {
+                            pathString += currentLine;
+                            currentLine = innFil.ReadLine();
+                        }
+                        pathString += currentLine;
+                        PathList.Add(pathString);
+                        outPathString = pathString;
+                    }
                 }
             }
 
-            GeneratedGCODE.Add(StartGCODE + "\n");
+        }
+
+        public void GenerateGCODE()
+        {
+            
+            GeneratedGCODE.Add(StartGCODE);
             foreach (string path in PathList)
             {
-                string[] splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);       //<path id="svg_4" d="m178.5,481.45...
-                string cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
+                string[] splitGoose;
+                string cmd = "";
+                if (path.Contains("d=\"M"))
+                {
+                    splitGoose = path.Split(new[] { "d=\"M" }, StringSplitOptions.None);       //<path id="svg_4" d="M178.5,481.45...
+                    cmd = 'M' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
+                }    
+                else if (path.Contains("d=\"m"))
+                {
+                    splitGoose = path.Split(new[] { "d=\"m" }, StringSplitOptions.None);       //<path id="svg_4" d="m178.5,481.45...
+                    cmd = 'm' + splitGoose[1].Substring(0, splitGoose[1].IndexOf('"'));      //extracts the bezier related info
+                }
 
                 List<int> commandIndex = new List<int>();
                 for (int i = 0; i < cmd.Length; i++)        //extracts all command locations in the path
@@ -463,61 +490,82 @@ namespace plottrBot
                     else    //i + 1 = commandIndex.Count aka last object in list
                         GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));
                 }
-                GeneratedGCODE.Add("G1 Z1\n");
+                //GeneratedGCODE.Add("G1 Z1");
             }
-            GeneratedGCODE.Add(EndGCODE + "\n");
+            GeneratedGCODE.Add(EndGCODE);
         }
 
-        private string pathCommandToGCODE(string pathCommand)
-        {
-            string returnString = "";
+        public List<string> cmdPointsString2 { get; set; }
 
+        public string pathCommandToGCODE(string pathCommand)
+        {
             char cmd = pathCommand[0];
             pathCommand = pathCommand.Substring(1, pathCommand.Length - 1);
-            string[] cmdPointsString = pathCommand.Split(new char[] { ',', ' ' });
+            List<string> cmdPointsString = (pathCommand.Split(new char[] { ',', ' ' })).ToList<string>();
             List<double> cmdPoints = new List<double>();
 
-            for (int i = 0; i < cmdPointsString.Length; i++)        //used to confirm each value is a number before GCODE is generated
+            foreach (string number in cmdPointsString)      //makes sure all read coordinates are numbers and removes stray spaces and other characters
+            {
+                double parsedNumber = -1;
+                double.TryParse(number, out parsedNumber);
+                if(parsedNumber != 0)
+                    cmdPoints.Add(parsedNumber);
+            }
+
+            for (int i = 0; i < cmdPoints.Count; i++)       //handles relative to absolute coordinates and changed position on canvas
             {
                 //i really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
-                if (i % 2 == 0)     
+                if (i % 2 == 0)
                 {
-                    cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]) + ImgMoveX + relativeToAbsX);
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveX + relativeToAbsX;
                     relativeToAbsX += cmdPoints[i] - ImgMoveX;
                 }
                 else
                 {
-                    cmdPoints.Add(Convert.ToDouble(cmdPointsString[i]) + ImgMoveY + relativeToAbsY);
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveY + relativeToAbsY;
                     relativeToAbsY += cmdPoints[i] - ImgMoveY;
                 }
             }
 
+            return putStringTogether(cmd, cmdPoints);
+        }
+
+        private string putStringTogether(char cmd, List<double> cmdPoints)      
+        {
+            string returnString = "";
+            int numberOfPointsInCommand = 0;
+
             switch (cmd)
             {
                 case 'm':
-                    returnString += "G1 Z1\n";
-                    returnString += String.Format("G1 {0:0.##} {1:0.##}", cmdPoints[0], cmdPoints[1]);
+                case 'M':
+                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z1\n", cmdPoints[0], cmdPoints[1]);
+                    numberOfPointsInCommand = 2;
                     break;
                 case 'l':
-                    returnString += "G1 Z0\n";
-                    returnString += String.Format("G1 {0:0.##} {1:0.##}", cmdPoints[0], cmdPoints[1]);
+                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", cmdPoints[0], cmdPoints[1]);
+                    numberOfPointsInCommand = 2;
                     break;
                 case 'z':
                     break;
                 case 'c':
-                    returnString += String.Format("G5 C {0:0.##} {1:0.##} {2:0.##} {3:0.##} {4:0.##} {5:0.##}",
+                    returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##}\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
+                    numberOfPointsInCommand = 6;
                     break;
                 case 'q':
-                    returnString += String.Format("G5 Q {0:0.##} {1:0.##} {2:0.##} {3:0.##}",
+                    returnString += String.Format("G5 Q I{0:0.##} J{1:0.##} X{2:0.##} Y{3:0.##}\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
+                    numberOfPointsInCommand = 4;
                     break;
                 default:
                     break;
             }
 
-            return returnString;
+            if (cmdPoints.Count > numberOfPointsInCommand)      //some sweet recursion to handle one character denoting a repeat of commands
+                returnString += putStringTogether(cmd, cmdPoints.GetRange(numberOfPointsInCommand, cmdPoints.Count - numberOfPointsInCommand));
 
+            return returnString;
         }
 
     }

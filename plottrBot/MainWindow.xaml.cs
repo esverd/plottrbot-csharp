@@ -347,9 +347,46 @@ namespace plottrBot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
                         SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
-                        foreach (string item in svgPlottr.GeneratedGCODE)
+                        //txtOut.Text += svgPlottr.outPathString;
+                        foreach (string gcode in svgPlottr.GeneratedGCODE)
                         {
-                            txtOut.Text += item + "\n";
+                            txtOut.Text += gcode;
+                        }
+                        //txtOut.Text += svgPlottr.pathCommandToGCODE("m178.5,481.45313");
+                        //txtOut.Text += svgPlottr.pathCommandToGCODE("q 30.616072,82.776784 101.67559,15.119047 11 11 30.616072,82.776784 101.67559,15.119047 11 11");
+
+                        //List<double> doubleList = new List<double>();
+                        //doubleList.Add(1);
+                        //doubleList.Add(2);
+                        //doubleList.Add(3);
+                        //doubleList.Add(4);
+                        //doubleList.Add(5);
+                        //doubleList.Add(6);
+                        //doubleList.Add(7);
+                        //doubleList.Add(8);
+                        //txtOut.Text += svgPlottr.putStringTogether('q', doubleList);
+
+                        //foreach (string item in svgPlottr.cmdPointsString2)
+                        //{
+                        //    txtOut.Text += "\n" + item;
+                        //}
+
+                        //System.Windows.Shapes.Path p = new System.Windows.Shapes.Path();
+
+
+                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
+                        svgDoc.Path.Flatten();
+                        PointF[] pointF = svgDoc.Path.PathPoints;
+                        int nPoints = svgDoc.Path.PointCount;
+
+                        foreach (PointF point in pointF)
+                        {
+                            Ellipse currentDot = new Ellipse();
+                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                            currentDot.Fill = System.Windows.Media.Brushes.Black;
+                            currentDot.Width = 2;
+                            currentDot.Height = 2;
+                            canvasPreview.Children.Add(currentDot);
                         }
 
                         //still needs:
@@ -369,22 +406,9 @@ namespace plottrBot
 
 
 
-                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
-                        svgDoc.Path.Flatten();
-                        PointF[] pointF = svgDoc.Path.PathPoints;
-                        int nPoints = svgDoc.Path.PointCount;
 
-                        foreach (PointF point in pointF)
-                        {
-                            Ellipse currentDot = new Ellipse();
-                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
-                            currentDot.Fill = System.Windows.Media.Brushes.Black;
-                            currentDot.Width = 2;
-                            currentDot.Height = 2;
-                            canvasPreview.Children.Add(currentDot);
-                        }
 
-                        
+
 
 
                     }
