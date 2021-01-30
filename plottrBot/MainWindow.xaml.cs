@@ -348,11 +348,12 @@ namespace plottrBot
 
                         SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
                         //txtOut.Text += svgPlottr.outPathString;
-                        foreach (string gcode in svgPlottr.GeneratedGCODE)
-                        {
-                            txtOut.Text += gcode;
-                        }
+                        //foreach (string gcode in svgPlottr.GeneratedGCODE)
+                        //{
+                        //    txtOut.Text += gcode;
+                        //}
                         //txtOut.Text += svgPlottr.pathCommandToGCODE("m178.5,481.45313");
+                        txtOut.Text += svgPlottr.pathCommandToGCODE("M 30.616072,82.776784 101.67559,15.119047 c 0,0 88.06846,88.824403 -1.13392,90.714283 -89.202384,1.88988 -9.071432,-36.663688 -9.071432,-36.663688");
                         //txtOut.Text += svgPlottr.pathCommandToGCODE("q 30.616072,82.776784 101.67559,15.119047 11 11 30.616072,82.776784 101.67559,15.119047 11 11");
 
                         //List<double> doubleList = new List<double>();
