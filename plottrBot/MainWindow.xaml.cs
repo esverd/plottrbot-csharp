@@ -30,7 +30,6 @@ namespace plottrBot
         Plottr myPlot;          //the object from the custom Plottr class
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
-        //int robotWidth, robotHeight;  //previewWidth, previewHeight
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
@@ -43,25 +42,15 @@ namespace plottrBot
         {
             InitializeComponent();
 
-            tabControlOptions.Height = canvasPreview.Height + 25 + 2;
+            //tabControlOptions.Height = canvasPreview.Height + 25 + 2;
 
-            //robotWidth = 1460;      //in mm     //TODO load from settings/assets
-            //robotHeight = 550; //1050    //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
-            Plottr.RobotWidth = 1460;
-            Plottr.RobotHeight = 1200;
+            Plottr.RobotWidth = Properties.Settings.Default.RobotWidth;
+            Plottr.RobotHeight = Properties.Settings.Default.RobotHeight;
+            txtRWidth.Text = Properties.Settings.Default.RobotWidth.ToString();
+            txtRHeight.Text = Properties.Settings.Default.RobotHeight.ToString();
 
-            //previewWidth = 1200;
             scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
-            //previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
             canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
-
-            //borderPreview.Width = previewWidth + 2;
-            //borderPreview.Height = previewHeight + 2;
-            //canvasPreview.Width = previewWidth;
-            //canvasPreview.Height = previewHeight;
-            
-            //Plottr.ToolDiameter = 1.0;     //in mm     //TODO load from settings/assets
-            //txtToolDiameter.Text = Plottr.ToolDiameter.ToString();
 
             port = new SerialPort();        //creates a blank serial port to be specified later
 
@@ -70,6 +59,7 @@ namespace plottrBot
             currentState = GUIStates.T0blank;
             updateGUIelements();
 
+            
         }
 
         private void disableAllGUIelements()
@@ -313,7 +303,7 @@ namespace plottrBot
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image file (*.bmp) | *.bmp | Vector file (*.svg) | *.svg";
+            openFileDialog.Filter = "Image file (*.bmp) | *.bmp";
             //bool result = (bool)openFileDialog.ShowDialog();
             if ((bool)openFileDialog.ShowDialog())
             {
@@ -324,8 +314,6 @@ namespace plottrBot
                 myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
                 placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
 
-                //enables buttons that need the image to work
-                //enabledUIElements("img enable");
                 currentTransition = GUITransitions.H0imgOpen;
                 handleGUIstates();
             }
@@ -333,7 +321,7 @@ namespace plottrBot
 
         private async void btnSliceImg_Click(object sender, RoutedEventArgs e)     //slices the image to individual lines that are either drawn or moved without drawing
         {
-            countCmdSent = 0;   //0;
+            countCmdSent = 0;
 
             //read start and end gcode from text boxes
             myPlot.StartGCODE = "G1 Z1\n";
@@ -368,16 +356,6 @@ namespace plottrBot
             sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
 
             txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
-
-            //previewing GCODE text is nice for debugging but super slow
-            //foreach (string command in myPlot.GeneratedGCODE)
-            //{
-            //    txtOut.Text += command;     //prints the command to text output
-            //}
-
-            //if (btnSend.IsEnabled)
-            //    enabledUIElements("both enable");
-            //btnBoundingBox.IsEnabled = true;
 
             currentTransition = GUITransitions.H1imgSlice;
             handleGUIstates();
@@ -512,37 +490,6 @@ namespace plottrBot
 
         }
 
-        private void enabledUIElements(string elements)
-        {
-            if(elements.Contains("com enable"))
-            {
-                btnSend.IsEnabled = true;
-                txtSerialCmd.IsEnabled = true;
-            }
-            else if (elements.Contains("com disable"))
-            {
-                //btnSend.IsEnabled = false;
-                //txtSerialCmd.IsEnabled = false;
-                btnSendImg.IsEnabled = false;
-                btnBoundingBox.IsEnabled = false;
-            }
-            else if (elements.Contains("img enable"))
-            {
-                btnSliceImg.IsEnabled = true;
-                btnMoveImg.IsEnabled = true;
-                btnCenterImg.IsEnabled = true;
-                btnCenterImg.Content = "Move top left";
-                txtMoveX.IsEnabled = true;
-                txtMoveY.IsEnabled = true;
-            }
-            else if(elements.Contains("both enable"))
-            {
-                
-                btnSendImg.IsEnabled = true;
-                btnBoundingBox.IsEnabled = true;
-            }
-        }
-
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -551,13 +498,11 @@ namespace plottrBot
                 {
                     port.Close();
                     btnConnect.Content = "Connect USB";
-                    //enabledUIElements("com disable");
                     currentTransition = GUITransitions.H4usbClose;
                     handleGUIstates();
                 }
                 else
                 {
-                    //port = new SerialPort(comArray[comboBoxCOM.SelectedIndex], 9600, Parity.None, 8, StopBits.One);
                     port.PortName = comArray[comboBoxCOM.SelectedIndex];
                     port.BaudRate = 9600;
                     port.Parity = Parity.None;
@@ -565,10 +510,6 @@ namespace plottrBot
                     port.StopBits = StopBits.One;
                     port.Open();
                     btnConnect.Content = "Disconnect";
-                    //if(btnSliceImg.IsEnabled)
-                    //    enabledUIElements("both enable");
-                    //else
-                    //    enabledUIElements("com enable");
                     currentTransition = GUITransitions.H3usbOpen;
                     handleGUIstates();
                 }
@@ -620,7 +561,6 @@ namespace plottrBot
             previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
             previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
 
-            //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
             canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
             txtMoveX.Text = myPlot.ImgMoveX.ToString();
             txtMoveY.Text = myPlot.ImgMoveY.ToString();
@@ -647,12 +587,7 @@ namespace plottrBot
             try
             {
                 int cmdNo = Convert.ToInt32(txtCmdStart.Text);
-                //countCmdSent = GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", line.X1, line.Y1));
-                
-                //string temp = (string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
-
                 countCmdSent = myPlot.GeneratedGCODE.IndexOf(string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
-                
                 btnSendImg_Click(sender, e);
             }
             catch (Exception ex)
@@ -738,7 +673,6 @@ namespace plottrBot
             }
         }
 
-
         private async void btnBoundingBox_Click(object sender, RoutedEventArgs e)
         {
             //selection box to choose if pen is touching canvas
@@ -746,13 +680,6 @@ namespace plottrBot
             //draw box in preview canvas
             //draw box on canvas
             //go to home position
-
-            //BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);
-
-            //txtOut.Text = myPlot.BoundingCoordinates.X0 + "\n";
-            //txtOut.Text += myPlot.BoundingCoordinates.Y0 + "\n";
-            //txtOut.Text += myPlot.BoundingCoordinates.X1 + "\n";
-            //txtOut.Text += myPlot.BoundingCoordinates.Y1 + "\n";
 
             TraceLine topLeftToRight = new TraceLine(myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview);
             TraceLine rightDown = new TraceLine(myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview);
@@ -797,13 +724,7 @@ namespace plottrBot
 
 
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));    //goes from home position
-
-            //if ((bool)checkBoxDrawingBoundingBox.IsChecked)
-            //    await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z0\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
-            //else
-            //    await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0));    //draws first line
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z{2}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0, !(bool)checkBoxDrawingBoundingBox.IsChecked));    //draws first line
-
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y1));              //draws second line
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y1));  //draws third line
             await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));                    //draws fourth line
@@ -862,5 +783,11 @@ namespace plottrBot
             
         }
 
+        private void btnSaveDimension_Click(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RobotWidth = Convert.ToInt32(txtRWidth.Text);
+            Properties.Settings.Default.RobotHeight = Convert.ToInt32(txtRHeight.Text);
+            Properties.Settings.Default.Save();
+        }
     }//main window
 }

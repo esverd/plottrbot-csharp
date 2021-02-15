@@ -71,11 +71,6 @@ namespace plottrBot
 
         private void imgToArray()
         {
-            //ratioWidthToPx = usableImgWidth / Img.PixelWidth;     //calculates the ratio between picture width in mm and number of pixels in width
-            //ratioHeightToPx = usableImgHeight / Img.PixelHeight;
-            //pxArrayWidth = TempImg.Width;
-            //pxArrayHeight = TempImg.Height;
-
             //this takes into consideration the maximum size of the robot canvas
             //areas outside the robot canvas gets cropped as they are unreachable
             ratioWidthToPx = GetImgWidth / Img.PixelWidth;     //calculates the ratio between picture width in mm and number of pixels in width
@@ -88,23 +83,6 @@ namespace plottrBot
 
             pxArrayWidth = (int)(usableImgWidth / ratioWidthToPx);
             pxArrayHeight = (int)(usableImgHeight / ratioHeightToPx);
-            
-
-
-            //double dpi = 25.4 / ToolDiameter;
-            //pxArrayWidth = (Int32)(ratioWidthToPx * dpi);
-            //pxArrayHeight = (Int32)(ratioHeightToPx * dpi);
-
-            //Bitmap tempImg = new Bitmap(1, 1);
-            //using (MemoryStream outStream = new MemoryStream())
-            //{
-            //    BitmapEncoder enc = new BmpBitmapEncoder();
-            //    enc.Frames.Add(BitmapFrame.Create(Img));
-            //    enc.Save(outStream);
-            //    System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
-
-            //    Bitmap tempImp = new Bitmap(bitmap);
-            //}
 
             int blackPixelThreshold = 60;
 
@@ -237,12 +215,6 @@ namespace plottrBot
             {
                 AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
                 AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
-                //bool drawWhileMoving = true;
-                //if (BlackLines[i].Draw != BlackLines[i + 1].Draw)       //not valid as Draw is null for all BlackLines
-                //    drawWhileMoving = false;
-                //AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, drawWhileMoving)); //moves draw head to position for next line
-
-                //TODO move to the very last BlackLines[i+1].X1 and Y1, this is currently not handled
 
                 //finding the minimum and maximum values for both X and Y positions. used to draw the bounding box in GUI
                 if (BlackLines[i].X0 < xMinVal || BlackLines[i].X1 < xMinVal)
@@ -257,7 +229,6 @@ namespace plottrBot
 
             BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);        //saves X and Y positions to draw bounding box later
 
-            ////GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
             GeneratedGCODE.Add(StartGCODE + "\n");
             GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
             foreach (TraceLine line in AllLines)
@@ -266,29 +237,7 @@ namespace plottrBot
                 GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\nL{2}", line.X1, line.Y1, AllLines.IndexOf(line)));      //added L to save the line number, makes gui stuff easier in main window
             }
             GeneratedGCODE.Add(EndGCODE + "\n");
-
-            //GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
-            //GeneratedGCODE.Add(StartGCODE + "\n");
-            //GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
-            //GeneratedGCODE.Add("G1 Z0\n");
-            //for (int i = 0; i < AllLines.Count - 1; i++)
-            //{
-            //    if (AllLines[i].Draw != AllLines[i + 1].Draw)
-            //        GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!AllLines[i].Draw) + "\n");
-            //    GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[i].X1, AllLines[i].Y1));
-            //    //if this line draws black, and next line draws black -> nothing
-            //    //if this line (draw) is not equal to next line (draw) -> change servo position
-            //    //else keep the same servo position
-
-            //}
-            //GeneratedGCODE.Add(EndGCODE + "\n");
-
         }
-
-        //public void RenderCircles()
-        //{
-        //    const int RADIUS = 40; //in pixels
-        //}
 
         public void ImgToCSV()
         {
@@ -303,64 +252,6 @@ namespace plottrBot
             }
 
         }
-
-        //private void calMovementSideToSide()
-        //{
-        //    imgToArray();
-
-        //    bool lineStarted = false;
-        //    int x0 = 0, y0 = 0;
-        //    bool leftToRight = true;
-
-        //    for (int y = 0; y < pxArrayHeight; y++)
-        //    {
-        //        if (leftToRight)
-        //        {
-        //            for (int x = 0; x < pxArrayWidth - 1; x++)
-        //            {
-        //                if (!lineStarted && pixelArray[x, y])       //if this is the first black pixel in a new line
-        //                {
-        //                    x0 = x;         //saves coordinates for start of new line
-        //                    y0 = y;
-        //                    lineStarted = true;
-        //                }
-        //                if (lineStarted && (!pixelArray[x + 1, y] || x >= pxArrayWidth - 2))       //if next pixel is white or the edge of image
-        //                {
-        //                    if (pixelArray[x + 1, y])    //check the very last pixel as well
-        //                        //BlackLines.Add(new TraceLine(x0 + ImgMoveX, y0 + ImgMoveY, (x + 1) + ImgMoveX, y + ImgMoveY));      //saves coordinates of last pixel in the line
-        //                        BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, ((x + 1) * ratioWidthToPx) + ImgMoveX, (y * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
-        //                    else
-        //                        BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (y * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
-        //                    lineStarted = false;        //start a new line
-        //                }
-        //            }
-        //            leftToRight = false;
-        //        }
-        //        else
-        //        {
-        //            for (int x = pxArrayWidth - 1; x > 0; x--)
-        //            {
-        //                if (!lineStarted && pixelArray[x, y])
-        //                {
-        //                    x0 = x;
-        //                    y0 = y;
-        //                    lineStarted = true;
-        //                }
-        //                if (lineStarted && (!pixelArray[x - 1, y] || x <= 1))
-        //                {
-        //                    if (pixelArray[x - 1, y])    //check the very last pixel as well
-        //                        BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, ((x + 1) * ratioWidthToPx) + ImgMoveX, (y * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
-        //                    else
-        //                        BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (y * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
-        //                    lineStarted = false;
-        //                }
-        //            }
-        //            leftToRight = true;
-        //        }
-
-
-        //    } //for y
-        //}
 
     }
 
