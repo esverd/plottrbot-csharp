@@ -412,6 +412,9 @@ namespace plottrBot
         private double relativeToAbsX { get; set; }
         private double relativeToAbsY { get; set; }
 
+        public SVGPlottr()      //for debugging remove when svg works
+        {
+        }
         public SVGPlottr(string filepath)
         {
             Filepath = filepath;
@@ -472,29 +475,36 @@ namespace plottrBot
                         commandIndex.Add(i);
                 }
 
+                //this is where the index problem seems to be located
                 for (int i = 0; i < commandIndex.Count; i++)    //splits the path commands into separate strings for each command
                 {
+                    string temp = "";
                     if (i + 1 < commandIndex.Count)     //if not last item in loop
                         GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i])));  //adds GCODE based on the path command
                     else    //i + 1 = commandIndex.Count aka last object in list
                         GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));   //adds GCODE based on the path command
+                    //temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
                 }
             }
             GeneratedGCODE.Add(EndGCODE);
         }
 
+        //WORKS
         public string pathCommandToGCODE(string pathCommand)   //converts bezier commands from svg path to GCODE which the robot can interpret
         {
-            char cmd = pathCommand[0];
-            pathCommand = pathCommand.Substring(1, pathCommand.Length - 1);
+            char cmd = pathCommand[0];      //only the command
+            pathCommand = pathCommand.Substring(1, pathCommand.Length - 1);     //all of the command parameteres/coordinates
             List<string> cmdPointsString = (pathCommand.Split(new char[] { ',', ' ' })).ToList<string>();   //creates new list split on spaces and commas
             List<double> cmdPoints = new List<double>();        //used to store converted numbers which are going to be sent to the robot
 
             foreach (string number in cmdPointsString)      //makes sure all read coordinates are numbers and removes stray spaces and other characters
             {
+                //double parsedNumber = 0;
+                //double.TryParse(number, out parsedNumber);
+                //if(parsedNumber != 0)
+                //    cmdPoints.Add(parsedNumber);
                 double parsedNumber = 0;
-                double.TryParse(number, out parsedNumber);
-                if(parsedNumber != 0)
+                if (double.TryParse(number, out parsedNumber))
                     cmdPoints.Add(parsedNumber);
             }
 
@@ -516,6 +526,7 @@ namespace plottrBot
             return putStringTogether(cmd, cmdPoints);
         }
 
+        //WORKS
         private string putStringTogether(char cmd, List<double> cmdPoints)      //handles if the list has multiples of required points for cmd
         {
             string returnString = "";

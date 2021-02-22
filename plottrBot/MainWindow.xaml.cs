@@ -347,13 +347,21 @@ namespace plottrBot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
                         SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
+
                         //txtOut.Text += svgPlottr.outPathString;
+                        foreach (string gcode in svgPlottr.GeneratedGCODE)
+                        {
+                            txtOut.Text += gcode;
+                        }
                         //foreach (string gcode in svgPlottr.GeneratedGCODE)
                         //{
-                        //    txtOut.Text += gcode;
+                        //    bool timedOut = sendSerialString(gcode);     //sends the gcode over usb to the robot
                         //}
+
+                        //btnSendImg.IsEnabled = true;
                         //txtOut.Text += svgPlottr.pathCommandToGCODE("m178.5,481.45313");
-                        txtOut.Text += svgPlottr.pathCommandToGCODE("M 30.616072,82.776784 101.67559,15.119047 c 0,0 88.06846,88.824403 -1.13392,90.714283 -89.202384,1.88988 -9.071432,-36.663688 -9.071432,-36.663688");
+                        //SVGPlottr svgPlottr = new SVGPlottr();
+                        //txtOut.Text += svgPlottr.pathCommandToGCODE("M 30.616072,82.776784 101.67559,15.119047 c 0,0 88.06846,88.824403 -1.13392,90.714283 -89.202384,1.88988 -9.071432,-36.663688 -9.071432,-36.663688");
                         //txtOut.Text += svgPlottr.pathCommandToGCODE("q 30.616072,82.776784 101.67559,15.119047 11 11 30.616072,82.776784 101.67559,15.119047 11 11");
 
                         //List<double> doubleList = new List<double>();
@@ -375,20 +383,19 @@ namespace plottrBot
                         //System.Windows.Shapes.Path p = new System.Windows.Shapes.Path();
 
 
-                        var svgDoc = SvgDocument.Open(openFileDialog.FileName);
-                        svgDoc.Path.Flatten();
-                        PointF[] pointF = svgDoc.Path.PathPoints;
-                        int nPoints = svgDoc.Path.PointCount;
-
-                        foreach (PointF point in pointF)
-                        {
-                            Ellipse currentDot = new Ellipse();
-                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
-                            currentDot.Fill = System.Windows.Media.Brushes.Black;
-                            currentDot.Width = 2;
-                            currentDot.Height = 2;
-                            canvasPreview.Children.Add(currentDot);
-                        }
+                        //var svgDoc = SvgDocument.Open(openFileDialog.FileName);
+                        //svgDoc.Path.Flatten();
+                        //PointF[] pointF = svgDoc.Path.PathPoints;
+                        //int nPoints = svgDoc.Path.PointCount;
+                        //foreach (PointF point in pointF)
+                        //{
+                        //    Ellipse currentDot = new Ellipse();
+                        //    currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                        //    currentDot.Fill = System.Windows.Media.Brushes.Black;
+                        //    currentDot.Width = 2;
+                        //    currentDot.Height = 2;
+                        //    canvasPreview.Children.Add(currentDot);
+                        //}
 
                         //still needs:
                         //-scaling of point values
