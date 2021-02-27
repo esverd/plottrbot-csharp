@@ -31,14 +31,15 @@ namespace plottrBot
     public partial class MainWindow : Window
     {
         PlottrBMP myPlot;          //the object from the custom Plottr class
+        SVGPlottr svgPlot;
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
         //int robotWidth, robotHeight;  //previewWidth, previewHeight
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
-        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing };
-        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause };
+        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing, T7svgLoaded, T8svgLoadedUsbConnected, T9svgDrawing };
+        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause, H7svgMove, H8svgOpen };
         GUIStates currentState;
         GUITransitions currentTransition;
 
@@ -50,13 +51,13 @@ namespace plottrBot
 
             //robotWidth = 1460;      //in mm     //TODO load from settings/assets
             //robotHeight = 550; //1050    //1530 used for bigger canvas     //in mm     //TODO load from settings/assets
-            PlottrBMP.RobotWidth = 1460;
-            PlottrBMP.RobotHeight = 1200;
+            Plottr.RobotWidth = 1460;
+            Plottr.RobotHeight = 1200;
 
             //previewWidth = 1200;
-            scaleToPreview = (double)canvasPreview.Width / (double)PlottrBMP.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
             //previewHeight = 860;    //(int)(robotHeight * scaleToPreview);
-            canvasPreview.Height = PlottrBMP.RobotHeight * scaleToPreview;
+            canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
 
             //borderPreview.Width = previewWidth + 2;
             //borderPreview.Height = previewHeight + 2;
@@ -111,6 +112,8 @@ namespace plottrBot
             switch (currentState)
             {
                 case GUIStates.T0blank:
+                    canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                    canvasPreview.Background = System.Windows.Media.Brushes.White;
                     break;
                 case GUIStates.T1imgLoaded:
                     txtMoveX.IsEnabled = true;
@@ -184,6 +187,54 @@ namespace plottrBot
                     btnSendImg.IsEnabled = true;
                     btnPauseDrawing.IsEnabled = true;
                     break;
+                case GUIStates.T7svgLoaded:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    break;
+                case GUIStates.T8svgLoadedUsbConnected:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+
+                    btnCmdStart.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+
+                    btnSendImg.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    break;
+                case GUIStates.T9svgDrawing:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+
+                    btnBoundingBox.IsEnabled = true;
+                    btnCmdStart.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+
+                    btnSendImg.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    break;
                 //case GUIStates.T6drawing:
                 //    break;
                 default:
@@ -204,6 +255,10 @@ namespace plottrBot
                             break;
                         case GUITransitions.H3usbOpen:
                             currentState = GUIStates.T3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T7svgLoaded;
                             updateGUIelements();
                             break;
                         default:
@@ -253,6 +308,10 @@ namespace plottrBot
                             break;
                         case GUITransitions.H4usbClose:
                             currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
@@ -310,6 +369,83 @@ namespace plottrBot
                             break;
                     }
                     break;
+                case GUIStates.T7svgLoaded:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H7svgMove:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            //svgPlot.GenerateGCODE();
+                            //svgPlot.GeneratePreviewPoints();
+                            //loadSVGPreviewPoints();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T8svgLoadedUsbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            currentState = GUIStates.T9svgDrawing;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H7svgMove:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            //svgPlottr.generateGcode
+                            //svgPlottr.previewv
+                            //svgPlot.GenerateGCODE();
+                            //svgPlot.GeneratePreviewPoints();
+                            //loadSVGPreviewPoints();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T9svgDrawing:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            currentState = GUIStates.T9svgDrawing;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -346,78 +482,26 @@ namespace plottrBot
                         //c# will then send these components as gcode to the robot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
-                        SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
+                        svgPlot = new SVGPlottr(openFileDialog.FileName);
 
-                        foreach (string gcode in svgPlottr.GeneratedGCODE)
+                        foreach (string gcode in svgPlot.GeneratedGCODE)
                         {
                             txtOut.Text += gcode;
                         }
 
-                        svgPlottr.GeneratePreviewPoints();
-                        foreach (PointF point in svgPlottr.PreviewPoints)
-                        {
-                            Ellipse currentDot = new Ellipse();
-                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
-                            currentDot.Fill = System.Windows.Media.Brushes.Cyan;
-                            currentDot.Width = 2;
-                            currentDot.Height = 2;
-                            canvasPreview.Children.Add(currentDot);
-                        }
+                        svgPlot.GeneratePreviewPoints();
+                        loadSVGPreviewPoints();
 
-                        //List<PointF> pointF = new List<PointF>();
-                        //double currentX = 774.09;
-                        //double currentY = 202.58;
-                        //double x1 = 774.09;
-                        //double y1 = 202.58;
-                        //double x2 = 711.08;
-                        //double y2 = 217.44;
-                        //double x = 711.96;
-                        //double y = 255.09;
-                        //for (double t = 0.0; t <= 1.0; t += 0.05)
-                        //{
-                        //    //double nextX = currentX * Math.Pow((1 - t), 3) + 3 * t * x1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2) + x * Math.Pow(t, 3);
-                        //    //double nextY = currentY * Math.Pow((1 - t), 3) + 3 * t * y1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2) + y * Math.Pow(t, 3);
-                        //    //double nextX = (currentX * Math.Pow((1 - t), 3)) + (3 * t * x1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2)) + (x * Math.Pow(t, 3));
-                        //    //double nextY = (currentY * Math.Pow((1 - t), 3)) + (3 * t * y1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2)) + (y * Math.Pow(t, 3));
-                        //    double nextX = Math.Pow((1 - t), 3) * currentX + 3 * Math.Pow((1 - t), 2) * t * x1 + 3 * (1 - t) * Math.Pow(t, 2) * x2 + Math.Pow(t, 3) * x;
-                        //    double nextY = Math.Pow((1 - t), 3) * currentY + 3 * Math.Pow((1 - t), 2) * t * y1 + 3 * (1 - t) * Math.Pow(t, 2) * y2 + Math.Pow(t, 3) * y;
-                        //    pointF.Add(new PointF((float)nextX, (float)nextY));
-                        //    //currentX = nextX;    //saves the new position
-                        //    //currentY = nextY;    //saves the new position
-                        //}
-                        //currentX = x;
-                        //currentY = y;
-                        //x1 = 712.83;
-                        //y1 = 292.75;
-                        //x2 = 774.09;
-                        //y2 = 298.69;
-                        //x = 774.09;
-                        //y = 298.69;
-                        //for (double t = 0.0; t <= 1.0; t += 0.01)
-                        //{
-                        //    double nextX = (Math.Pow((1 - t), 3) * currentX) + (3 * Math.Pow((1 - t), 2) * t * x1) + (3 * (1 - t) * Math.Pow(t, 2) * x2) + (Math.Pow(t, 3) * x);
-                        //    double nextY = (Math.Pow((1 - t), 3) * currentY) + (3 * Math.Pow((1 - t), 2) * t * y1) + (3 * (1 - t) * Math.Pow(t, 2) * y2) + (Math.Pow(t, 3) * y);
-                        //    pointF.Add(new PointF((float)nextX, (float)nextY));
-                        //    //currentX = nextX;    //saves the new position
-                        //    //currentY = nextY;    //saves the new position
-                        //}
+                        currentTransition = GUITransitions.H8svgOpen;
+                        handleGUIstates();
 
-                        //int nPoints = pointF.Count();
-                        //foreach (PointF point in svgPlottr.PreviewPoints)
-                        //{
-                        //    Ellipse currentDot = new Ellipse();
-                        //    currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
-                        //    currentDot.Fill = System.Windows.Media.Brushes.Cyan;
-                        //    currentDot.Width = 2;
-                        //    currentDot.Height = 2;
-                        //    canvasPreview.Children.Add(currentDot);
-                        //}
-
+                        txtOut.Text += svgPlot.GetImgWidth + "\n";
+                        txtOut.Text += svgPlot.GetImgHeight;
 
                         //still needs:
                         //-scaling of point values
                         //- moving of curve on preview
-                        //-preview
+                        //x-preview
 
                         //G5 Q = quadratic ^2
                         //G5 C = cubic ^3
@@ -445,6 +529,19 @@ namespace plottrBot
             {
                 string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
                 MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+        }
+
+        private void loadSVGPreviewPoints()
+        {
+            foreach (PointF point in svgPlot.PreviewPoints)
+            {
+                Ellipse currentDot = new Ellipse();
+                currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
+                currentDot.Width = 2;
+                currentDot.Height = 2;
+                canvasPreview.Children.Add(currentDot);
             }
         }
 
@@ -713,8 +810,20 @@ namespace plottrBot
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
-                Plottr.ImgMoveX = Convert.ToInt32((PlottrBMP.RobotWidth - myPlot.GetImgWidth) / 2);
-                Plottr.ImgMoveY = Convert.ToInt32((PlottrBMP.RobotHeight - myPlot.GetImgHeight) / 2);
+                double currentPicWidth;
+                double currentPicHeight;
+                if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+                {
+                    currentPicWidth = svgPlot.GetImgWidth;
+                    currentPicHeight = svgPlot.GetImgHeight;
+                }
+                else
+                {
+                    currentPicWidth = myPlot.GetImgWidth;
+                    currentPicHeight = myPlot.GetImgHeight;
+                }
+                Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - currentPicWidth ) / 2);
+                Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - currentPicHeight) / 2);
                 placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                 btnCenterImg.Content = "Move top left";
             }
@@ -729,16 +838,26 @@ namespace plottrBot
 
         void placeImageAt(double x, double y)
         {
-            canvasPreview.Children.Clear();     //removes potential preview lines already drawn
-            ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
-            previewImageBrush.Stretch = Stretch.Fill;
-            previewImageBrush.ViewportUnits = BrushMappingMode.Absolute;
-            previewImageBrush.Viewport = new Rect(x * scaleToPreview, y * scaleToPreview, myPlot.GetImgWidth * scaleToPreview, myPlot.GetImgHeight * scaleToPreview);     //fill the image to fit this box
-            previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
-            previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
+            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            canvasPreview.Background = System.Windows.Media.Brushes.White;
+            if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+            {
+                svgPlot.GenerateGCODE();
+                svgPlot.GeneratePreviewPoints();
+                loadSVGPreviewPoints();
+            }
+            else
+            {
+                ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
+                previewImageBrush.Stretch = Stretch.Fill;
+                previewImageBrush.ViewportUnits = BrushMappingMode.Absolute;
+                previewImageBrush.Viewport = new Rect(x * scaleToPreview, y * scaleToPreview, myPlot.GetImgWidth * scaleToPreview, myPlot.GetImgHeight * scaleToPreview);     //fill the image to fit this box
+                previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
+                previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
+                //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
+                canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
+            }
 
-            //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
-            canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
             txtMoveX.Text = Plottr.ImgMoveX.ToString();
             txtMoveY.Text = Plottr.ImgMoveY.ToString();
         }
@@ -826,8 +945,7 @@ namespace plottrBot
         private void btnClearImg_Click(object sender, RoutedEventArgs e)
         {
             myPlot = null;
-            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-            canvasPreview.Background = System.Windows.Media.Brushes.White;
+            svgPlot = null;
             currentTransition = GUITransitions.H2imgClear;
             handleGUIstates();
         }

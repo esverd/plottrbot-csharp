@@ -39,10 +39,10 @@ namespace plottrBot
             }
         }
 
-        public void GenerateGCODE()
-        {
+        //public void GenerateGCODE()
+        //{
 
-        }
+        //}
 
     }
 
@@ -414,6 +414,10 @@ namespace plottrBot
         private double startXforClose { get; set; }
         private double startYforClose { get; set; }
         public List<PointF> PreviewPoints { get; set; }
+        private double svgWidth { get; set; }
+        private double svgHeight { get; set; }
+        public double GetImgWidth { get { return svgWidth; } }      //gets width in mm
+        public double GetImgHeight { get { return svgHeight; } }    //gets height in mm
 
         public SVGPlottr()      //for debugging remove when svg works
         {
@@ -431,6 +435,7 @@ namespace plottrBot
             getAllPaths();
             GenerateGCODE();
         }
+
         //public string outPathString { get; set; }
         private void getAllPaths()
         {
@@ -440,7 +445,11 @@ namespace plottrBot
                 {
                     string currentLine = innFil.ReadLine();
                     string pathString = "";
-                    if (currentLine.Contains("<path"))     //extracts path from svg file from "<path" to "/>" including all information in between
+                    if (currentLine.Contains(" width="))
+                        svgWidth = Convert.ToDouble(currentLine.Substring(currentLine.IndexOf('"') + 1, currentLine.IndexOf("mm") - currentLine.IndexOf('"') - 1));
+                    else if (currentLine.Contains(" height="))
+                        svgHeight = Convert.ToDouble(currentLine.Substring(currentLine.IndexOf('"') + 1, currentLine.IndexOf("mm") - currentLine.IndexOf('"') - 1));
+                    else if (currentLine.Contains("<path"))     //extracts path from svg file from "<path" to "/>" including all information in between
                     {
                         while(!currentLine.Contains("/>"))
                         {
@@ -458,6 +467,7 @@ namespace plottrBot
 
         public void GeneratePreviewPoints()
         {
+            PreviewPoints.Clear();
             double currentX = 1460 / 2.0;
             double currentY = 200;
             foreach (string gcode in GeneratedGCODE)
@@ -519,6 +529,7 @@ namespace plottrBot
 
         public void GenerateGCODE()
         {
+            GeneratedGCODE.Clear();
             GeneratedGCODE.Add(StartGCODE);
             foreach (string path in PathList)
             {
