@@ -348,58 +348,13 @@ namespace plottrBot
 
                         SVGPlottr svgPlottr = new SVGPlottr(openFileDialog.FileName);
 
-                        //txtOut.Text += svgPlottr.outPathString;
-
                         foreach (string gcode in svgPlottr.GeneratedGCODE)
                         {
                             txtOut.Text += gcode;
                         }
 
-                        //interpolateLine(currentX, currentY, 774.09, 202.58);
-                        //interpolateBezierCubic(774.09, 202.58, 711.08, 217.44, 711.96, 255.09);
-                        List<PointF> pointF = new List<PointF>();
-                        double currentX = 774.09;
-                        double currentY = 202.58;
-                        double x1 = 774.09;
-                        double y1 = 202.58;
-                        double x2 = 711.08;
-                        double y2 = 217.44;
-                        double x = 711.96;
-                        double y = 255.09;
-                        for (double t = 0.0; t <= 1.0; t += 0.01)
-                        {
-                            //double nextX = currentX * Math.Pow((1 - t), 3) + 3 * t * x1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2) + x * Math.Pow(t, 3);
-                            //double nextY = currentY * Math.Pow((1 - t), 3) + 3 * t * y1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2) + y * Math.Pow(t, 3);
-                            //double nextX = (currentX * Math.Pow((1 - t), 3)) + (3 * t * x1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2)) + (x * Math.Pow(t, 3));
-                            //double nextY = (currentY * Math.Pow((1 - t), 3)) + (3 * t * y1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2)) + (y * Math.Pow(t, 3));
-                            double nextX = Math.Pow((1 - t), 3) * currentX + 3 * Math.Pow((1 - t), 2) * t * x1 + 3 * (1 - t) * Math.Pow(t, 2) * x2 + Math.Pow(t, 3) * x;
-                            double nextY = Math.Pow((1 - t), 3) * currentY + 3 * Math.Pow((1 - t), 2) * t * y1 + 3 * (1 - t) * Math.Pow(t, 2) * y2 + Math.Pow(t, 3) * y;
-                            pointF.Add(new PointF((float)nextX, (float)nextY));
-                            //currentX = nextX;    //saves the new position
-                            //currentY = nextY;    //saves the new position
-                        }
-                        currentX = x;
-                        currentY = y;
-                        x1 = 712.83;
-                        y1 = 292.75;
-                        x2 = 774.09;
-                        y2 = 298.69;
-                        x = 774.09;
-                        y = 298.69;
-                        for (double t = 0.0; t <= 1.0; t += 0.01)
-                        {
-                            double nextX = (Math.Pow((1 - t), 3) * currentX) + (3 * Math.Pow((1 - t), 2) * t * x1) + (3 * (1 - t) * Math.Pow(t, 2) * x2) + (Math.Pow(t, 3) * x);
-                            double nextY = (Math.Pow((1 - t), 3) * currentY) + (3 * Math.Pow((1 - t), 2) * t * y1) + (3 * (1 - t) * Math.Pow(t, 2) * y2) + (Math.Pow(t, 3) * y);
-                            pointF.Add(new PointF((float)nextX, (float)nextY));
-                            //currentX = nextX;    //saves the new position
-                            //currentY = nextY;    //saves the new position
-                        }
-
-                        //List<PointF> pointF = new List<PointF>();
-                        //PointF[] pointF = svgDoc.Path.PathPoints;
-                        //int nPoints = svgDoc.Path.PointCount;
-                        int nPoints = pointF.Count();
-                        foreach (PointF point in pointF)
+                        svgPlottr.GeneratePreviewPoints();
+                        foreach (PointF point in svgPlottr.PreviewPoints)
                         {
                             Ellipse currentDot = new Ellipse();
                             currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
@@ -409,49 +364,55 @@ namespace plottrBot
                             canvasPreview.Children.Add(currentDot);
                         }
 
-                        //foreach (string gcode in svgPlottr.GeneratedGCODE)
+                        //List<PointF> pointF = new List<PointF>();
+                        //double currentX = 774.09;
+                        //double currentY = 202.58;
+                        //double x1 = 774.09;
+                        //double y1 = 202.58;
+                        //double x2 = 711.08;
+                        //double y2 = 217.44;
+                        //double x = 711.96;
+                        //double y = 255.09;
+                        //for (double t = 0.0; t <= 1.0; t += 0.05)
                         //{
-                        //    bool timedOut = sendSerialString(gcode);     //sends the gcode over usb to the robot
+                        //    //double nextX = currentX * Math.Pow((1 - t), 3) + 3 * t * x1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2) + x * Math.Pow(t, 3);
+                        //    //double nextY = currentY * Math.Pow((1 - t), 3) + 3 * t * y1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2) + y * Math.Pow(t, 3);
+                        //    //double nextX = (currentX * Math.Pow((1 - t), 3)) + (3 * t * x1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2)) + (x * Math.Pow(t, 3));
+                        //    //double nextY = (currentY * Math.Pow((1 - t), 3)) + (3 * t * y1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2)) + (y * Math.Pow(t, 3));
+                        //    double nextX = Math.Pow((1 - t), 3) * currentX + 3 * Math.Pow((1 - t), 2) * t * x1 + 3 * (1 - t) * Math.Pow(t, 2) * x2 + Math.Pow(t, 3) * x;
+                        //    double nextY = Math.Pow((1 - t), 3) * currentY + 3 * Math.Pow((1 - t), 2) * t * y1 + 3 * (1 - t) * Math.Pow(t, 2) * y2 + Math.Pow(t, 3) * y;
+                        //    pointF.Add(new PointF((float)nextX, (float)nextY));
+                        //    //currentX = nextX;    //saves the new position
+                        //    //currentY = nextY;    //saves the new position
+                        //}
+                        //currentX = x;
+                        //currentY = y;
+                        //x1 = 712.83;
+                        //y1 = 292.75;
+                        //x2 = 774.09;
+                        //y2 = 298.69;
+                        //x = 774.09;
+                        //y = 298.69;
+                        //for (double t = 0.0; t <= 1.0; t += 0.01)
+                        //{
+                        //    double nextX = (Math.Pow((1 - t), 3) * currentX) + (3 * Math.Pow((1 - t), 2) * t * x1) + (3 * (1 - t) * Math.Pow(t, 2) * x2) + (Math.Pow(t, 3) * x);
+                        //    double nextY = (Math.Pow((1 - t), 3) * currentY) + (3 * Math.Pow((1 - t), 2) * t * y1) + (3 * (1 - t) * Math.Pow(t, 2) * y2) + (Math.Pow(t, 3) * y);
+                        //    pointF.Add(new PointF((float)nextX, (float)nextY));
+                        //    //currentX = nextX;    //saves the new position
+                        //    //currentY = nextY;    //saves the new position
                         //}
 
-                        //btnSendImg.IsEnabled = true;
-                        //txtOut.Text += svgPlottr.pathCommandToGCODE("m178.5,481.45313");
-                        //SVGPlottr svgPlottr = new SVGPlottr();
-                        //txtOut.Text += svgPlottr.pathCommandToGCODE("M 30.616072,82.776784 101.67559,15.119047 c 0,0 88.06846,88.824403 -1.13392,90.714283 -89.202384,1.88988 -9.071432,-36.663688 -9.071432,-36.663688");
-                        //txtOut.Text += svgPlottr.pathCommandToGCODE("m 783.17839,169.06376 -0.0274,0.004 c 0,0 -31.76165,5.29259 -60.88672,18.53126 -14.56253,6.61933 -28.46922,15.22431 -37.41992,26.16406 -8.9507,10.93974 -12.93577,24.22783 -7.63086,40.14258 10.60007,31.8002 37.10464,47.70154 60.93945,55.64648 23.83482,7.94494 45.01954,7.94531 45.01954,7.94531 0,0 21.18704,4.2e-4 42.38086,-7.94726 10.5969,-3.97384 21.19935,-9.93521 29.15624,-18.88672 7.9569,-8.95151 13.26172,-20.89443 13.26172,-36.79883 0,-31.8088 -21.20769,-53.01604 -42.39453,-66.25781 -21.18683,-13.24177 -42.37109,-18.53711 -42.37109,-18.53711 z m -0.0117,0.26953 c 0.0741,0.0186 21.16019,5.30471 42.26953,18.49805 21.14649,13.21656 42.27148,34.342 42.27148,66.0332 0,15.8456 -5.27721,27.71518 -13.19531,36.62305 -7.9181,8.90786 -18.48298,14.85274 -29.05274,18.8164 -21.13951,7.92732 -42.2871,7.92774 -42.2871,7.92774 0,0 -21.14731,3.7e-4 -44.9375,-7.92969 -23.79019,-7.93006 -50.20293,-23.77872 -60.76954,-55.47852 -5.27841,-15.83525 -1.32469,-29.00419 7.58399,-39.89257 8.90868,-10.88839 22.78258,-19.48197 37.32422,-26.0918 29.04638,-13.2029 60.71261,-18.49245 60.79297,-18.50586 z");
-
-                        //List<double> doubleList = new List<double>();
-                        //doubleList.Add(1);
-                        //doubleList.Add(2);
-                        //doubleList.Add(3);
-                        //doubleList.Add(4);
-                        //doubleList.Add(5);
-                        //doubleList.Add(6);
-                        //doubleList.Add(7);
-                        //doubleList.Add(8);
-                        //txtOut.Text += svgPlottr.putStringTogether('q', doubleList);
-
-                        //foreach (string item in svgPlottr.cmdPointsString2)
-                        //{
-                        //    txtOut.Text += "\n" + item;
-                        //}
-
-                        //System.Windows.Shapes.Path p = new System.Windows.Shapes.Path();
-
-
-                        //var svgDoc = SvgDocument.Open(openFileDialog.FileName);
-                        //svgDoc.Path.Flatten();
-                        //PointF[] pointF = svgDoc.Path.PathPoints;
-                        //int nPoints = svgDoc.Path.PointCount;
-                        //foreach (PointF point in pointF)
+                        //int nPoints = pointF.Count();
+                        //foreach (PointF point in svgPlottr.PreviewPoints)
                         //{
                         //    Ellipse currentDot = new Ellipse();
                         //    currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
-                        //    currentDot.Fill = System.Windows.Media.Brushes.Black;
+                        //    currentDot.Fill = System.Windows.Media.Brushes.Cyan;
                         //    currentDot.Width = 2;
                         //    currentDot.Height = 2;
                         //    canvasPreview.Children.Add(currentDot);
                         //}
+
 
                         //still needs:
                         //-scaling of point values

@@ -413,7 +413,7 @@ namespace plottrBot
         private double relativeToAbsY { get; set; }
         private double startXforClose { get; set; }
         private double startYforClose { get; set; }
-
+        public List<PointF> PreviewPoints { get; set; }
 
         public SVGPlottr()      //for debugging remove when svg works
         {
@@ -427,10 +427,11 @@ namespace plottrBot
             startYforClose = -1;
             PathList = new List<string>();
             GeneratedGCODE = new List<string>();
+            PreviewPoints = new List<PointF>();
             getAllPaths();
             GenerateGCODE();
         }
-        public string outPathString { get; set; }
+        //public string outPathString { get; set; }
         private void getAllPaths()
         {
             using (StreamReader innFil = new StreamReader(Filepath))
@@ -448,11 +449,72 @@ namespace plottrBot
                         }
                         pathString += currentLine;
                         PathList.Add(pathString);
-                        outPathString = pathString;
+                        //outPathString = pathString;
                     }
                 }
             }
 
+        }
+
+        public void GeneratePreviewPoints()
+        {
+            double currentX = 1460 / 2.0;
+            double currentY = 200;
+            foreach (string gcode in GeneratedGCODE)
+            {
+                if (gcode.Contains("G1"))
+                {
+                    currentX = exctractCoordFromString(gcode, 'X');
+                    currentY = exctractCoordFromString(gcode, 'Y');
+                }
+                else if (gcode.Contains("G5 C"))
+                {
+                    double iVal = exctractCoordFromString(gcode, 'I');
+                    double jVal = exctractCoordFromString(gcode, 'J');
+                    double kVal = exctractCoordFromString(gcode, 'K');
+                    double lVal = exctractCoordFromString(gcode, 'L');
+                    double xVal = exctractCoordFromString(gcode, 'X');
+                    double yVal = exctractCoordFromString(gcode, 'Y');
+                    for (double t = 0.0; t <= 1.0; t += 0.03)
+                    {
+                        double nextX = Math.Pow((1 - t), 3) * currentX + 3 * Math.Pow((1 - t), 2) * t * iVal + 3 * (1 - t) * Math.Pow(t, 2) * kVal + Math.Pow(t, 3) * xVal;
+                        double nextY = Math.Pow((1 - t), 3) * currentY + 3 * Math.Pow((1 - t), 2) * t * jVal + 3 * (1 - t) * Math.Pow(t, 2) * lVal + Math.Pow(t, 3) * yVal;
+                        PreviewPoints.Add(new PointF((float)nextX, (float)nextY));
+                    }
+                    currentX = xVal;
+                    currentY = yVal;
+                }
+                else if (gcode.Contains("G5 Q"))
+                {
+                    double iVal = exctractCoordFromString(gcode, 'I');
+                    double jVal = exctractCoordFromString(gcode, 'J');
+                    double xVal = exctractCoordFromString(gcode, 'X');
+                    double yVal = exctractCoordFromString(gcode, 'Y');
+                    for (double t = 0.0; t <= 1.0; t += 0.03)
+                    {
+                        double nextX = currentX * Math.Pow((1 - t), 2) + 2 * t * iVal * (1 - t) + xVal * Math.Pow(t, 2);
+                        double nextY = currentY * Math.Pow((1 - t), 2) + 2 * t * jVal * (1 - t) + yVal * Math.Pow(t, 2);
+                        PreviewPoints.Add(new PointF((float)nextX, (float)nextY));
+                    }
+                    currentX = xVal;
+                    currentY = yVal;
+                }
+            }
+        }
+
+        private double exctractCoordFromString(string coordinateString, char coordinateAxis)
+        {
+            string foundCoord = "-1";
+            char findChar = coordinateAxis;
+            if (coordinateString.IndexOf(findChar) != -1)   //extracts the X value from the incomming command
+            {
+                //foundCoord = coordinateString.Substring(coordinateString.IndexOf(findChar) + 1, (coordinateString.Substring(coordinateString.IndexOf(findChar) + 1, coordinateString.IndexOf(findChar) + 2)).IndexOf(' ') - coordinateString.IndexOf(findChar) + 1);
+                foundCoord = coordinateString.Substring(coordinateString.IndexOf(findChar) + 1);
+                if(foundCoord.IndexOf(' ') != -1)
+                    foundCoord = foundCoord.Substring(0, foundCoord.IndexOf(' '));
+            }
+            return Convert.ToDouble(foundCoord);
+            //return 1;
         }
 
         public void GenerateGCODE()
