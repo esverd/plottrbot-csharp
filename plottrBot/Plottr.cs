@@ -486,6 +486,7 @@ namespace plottrBot
                     string temp = "";
                     if (i + 1 < commandIndex.Count)     //if not last item in loop
                         GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i])));  //adds GCODE based on the path command
+                        //temp = pathCommandToGCODE(cmd.Substring(commandIndex[i], commandIndex[i + 1] - commandIndex[i]));
                     else    //i + 1 = commandIndex.Count aka last object in list
                         GeneratedGCODE.Add(pathCommandToGCODE(cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i])));   //adds GCODE based on the path command
                     //temp = cmd.Substring(commandIndex[i], cmd.Length - commandIndex[i]);
@@ -518,12 +519,12 @@ namespace plottrBot
                 //TODO: I really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
                 if (i % 2 == 0)     //if coordinate on x axis
                 {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveX + relativeToAbsX;
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveX;// + relativeToAbsX;
                     relativeToAbsX += cmdPoints[i] - ImgMoveX;
                 }
                 else                //if coordinate on y axis
                 {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveY + relativeToAbsY;
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveY;// + relativeToAbsY;
                     relativeToAbsY += cmdPoints[i] - ImgMoveY;
                 }
             }
@@ -549,19 +550,23 @@ namespace plottrBot
                         startYforClose = cmdPoints[1];
                     }
                     break;
-                case 'l':
+                //case 'l':
+                case 'L':
                     returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", cmdPoints[0], cmdPoints[1]);
                     numberOfPointsForCmd = 2;
                     break;
                 case 'z':
+                case 'Z':
                     returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", startXforClose, startYforClose);
                     break;
-                case 'c':
+                //case 'c':
+                case 'C':
                     returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##}\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
                     numberOfPointsForCmd = 6;
                     break;
-                case 'q':
+                //case 'q':
+                case 'Q':
                     returnString += String.Format("G5 Q I{0:0.##} J{1:0.##} X{2:0.##} Y{3:0.##}\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
                     numberOfPointsForCmd = 4;
