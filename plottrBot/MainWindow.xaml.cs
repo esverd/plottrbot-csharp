@@ -355,6 +355,60 @@ namespace plottrBot
                             txtOut.Text += gcode;
                         }
 
+                        //interpolateLine(currentX, currentY, 774.09, 202.58);
+                        //interpolateBezierCubic(774.09, 202.58, 711.08, 217.44, 711.96, 255.09);
+                        List<PointF> pointF = new List<PointF>();
+                        double currentX = 774.09;
+                        double currentY = 202.58;
+                        double x1 = 774.09;
+                        double y1 = 202.58;
+                        double x2 = 711.08;
+                        double y2 = 217.44;
+                        double x = 711.96;
+                        double y = 255.09;
+                        for (double t = 0.0; t <= 1.0; t += 0.01)
+                        {
+                            //double nextX = currentX * Math.Pow((1 - t), 3) + 3 * t * x1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2) + x * Math.Pow(t, 3);
+                            //double nextY = currentY * Math.Pow((1 - t), 3) + 3 * t * y1 * Math.Pow((1 - t), 2) + 3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2) + y * Math.Pow(t, 3);
+                            //double nextX = (currentX * Math.Pow((1 - t), 3)) + (3 * t * x1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * x2 * Math.Pow(1 - t, 2)) + (x * Math.Pow(t, 3));
+                            //double nextY = (currentY * Math.Pow((1 - t), 3)) + (3 * t * y1 * Math.Pow((1 - t), 2)) + (3 * Math.Pow(t, 2) * y2 * Math.Pow(1 - t, 2)) + (y * Math.Pow(t, 3));
+                            double nextX = Math.Pow((1 - t), 3) * currentX + 3 * Math.Pow((1 - t), 2) * t * x1 + 3 * (1 - t) * Math.Pow(t, 2) * x2 + Math.Pow(t, 3) * x;
+                            double nextY = Math.Pow((1 - t), 3) * currentY + 3 * Math.Pow((1 - t), 2) * t * y1 + 3 * (1 - t) * Math.Pow(t, 2) * y2 + Math.Pow(t, 3) * y;
+                            pointF.Add(new PointF((float)nextX, (float)nextY));
+                            //currentX = nextX;    //saves the new position
+                            //currentY = nextY;    //saves the new position
+                        }
+                        currentX = x;
+                        currentY = y;
+                        x1 = 712.83;
+                        y1 = 292.75;
+                        x2 = 774.09;
+                        y2 = 298.69;
+                        x = 774.09;
+                        y = 298.69;
+                        for (double t = 0.0; t <= 1.0; t += 0.01)
+                        {
+                            double nextX = (Math.Pow((1 - t), 3) * currentX) + (3 * Math.Pow((1 - t), 2) * t * x1) + (3 * (1 - t) * Math.Pow(t, 2) * x2) + (Math.Pow(t, 3) * x);
+                            double nextY = (Math.Pow((1 - t), 3) * currentY) + (3 * Math.Pow((1 - t), 2) * t * y1) + (3 * (1 - t) * Math.Pow(t, 2) * y2) + (Math.Pow(t, 3) * y);
+                            pointF.Add(new PointF((float)nextX, (float)nextY));
+                            //currentX = nextX;    //saves the new position
+                            //currentY = nextY;    //saves the new position
+                        }
+
+                        //List<PointF> pointF = new List<PointF>();
+                        //PointF[] pointF = svgDoc.Path.PathPoints;
+                        //int nPoints = svgDoc.Path.PointCount;
+                        int nPoints = pointF.Count();
+                        foreach (PointF point in pointF)
+                        {
+                            Ellipse currentDot = new Ellipse();
+                            currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                            currentDot.Fill = System.Windows.Media.Brushes.Cyan;
+                            currentDot.Width = 2;
+                            currentDot.Height = 2;
+                            canvasPreview.Children.Add(currentDot);
+                        }
+
                         //foreach (string gcode in svgPlottr.GeneratedGCODE)
                         //{
                         //    bool timedOut = sendSerialString(gcode);     //sends the gcode over usb to the robot
