@@ -411,6 +411,9 @@ namespace plottrBot
         public List<string> PathList { get; set; }
         private double relativeToAbsX { get; set; }
         private double relativeToAbsY { get; set; }
+        private double startXforClose { get; set; }
+        private double startYforClose { get; set; }
+
 
         public SVGPlottr()      //for debugging remove when svg works
         {
@@ -420,6 +423,8 @@ namespace plottrBot
             Filepath = filepath;
             relativeToAbsX = 0;
             relativeToAbsY = 0;
+            startXforClose = -1;
+            startYforClose = -1;
             PathList = new List<string>();
             GeneratedGCODE = new List<string>();
             getAllPaths();
@@ -503,7 +508,7 @@ namespace plottrBot
                 //double.TryParse(number, out parsedNumber);
                 //if(parsedNumber != 0)
                 //    cmdPoints.Add(parsedNumber);
-                double parsedNumber = 0;
+                double parsedNumber;
                 if (double.TryParse(number, out parsedNumber))
                     cmdPoints.Add(parsedNumber);
             }
@@ -511,14 +516,14 @@ namespace plottrBot
             for (int i = 0; i < cmdPoints.Count; i++)       //handles relative to absolute coordinates and changed position on canvas
             {
                 //TODO: I really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
-                if (i % 2 == 0)
+                if (i % 2 == 0)     //if coordinate on x axis
                 {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveX; // + relativeToAbsX;
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveX + relativeToAbsX;
                     relativeToAbsX += cmdPoints[i] - ImgMoveX;
                 }
-                else
+                else                //if coordinate on y axis
                 {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveY; // + relativeToAbsY;
+                    cmdPoints[i] = cmdPoints[i] + ImgMoveY + relativeToAbsY;
                     relativeToAbsY += cmdPoints[i] - ImgMoveY;
                 }
             }
@@ -538,12 +543,18 @@ namespace plottrBot
                 case 'M':
                     returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z1\n", cmdPoints[0], cmdPoints[1]);
                     numberOfPointsForCmd = 2;
+                    if(startXforClose == -1 && startYforClose == -1)
+                    {
+                        startXforClose = cmdPoints[0];
+                        startYforClose = cmdPoints[1];
+                    }
                     break;
                 case 'l':
                     returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", cmdPoints[0], cmdPoints[1]);
                     numberOfPointsForCmd = 2;
                     break;
                 case 'z':
+                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", startXforClose, startYforClose);
                     break;
                 case 'c':
                     returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##}\n",
