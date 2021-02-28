@@ -476,6 +476,8 @@ namespace plottrBot
                 {
                     currentX = exctractCoordFromString(gcode, 'X');
                     currentY = exctractCoordFromString(gcode, 'Y');
+                    if (gcode.Contains("Z0"))
+                        PreviewPoints.Add(new PointF((float)currentX, (float)currentY));
                 }
                 else if (gcode.Contains("G5 C"))
                 {
@@ -630,17 +632,19 @@ namespace plottrBot
                     break;
                 case 'z':
                 case 'Z':
-                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", startXforClose, startYforClose);
+                    //returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", startXforClose, startYforClose);
                     break;
                 //case 'c':
                 case 'C':
-                    returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##}\n",
+                    //returnString += "G1 Z0\n";
+                    returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##} Z0\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
                     numberOfPointsForCmd = 6;
                     break;
                 //case 'q':
                 case 'Q':
-                    returnString += String.Format("G5 Q I{0:0.##} J{1:0.##} X{2:0.##} Y{3:0.##}\n",
+                    //returnString += "G1 Z0\n";
+                    returnString += String.Format("G5 Q I{0:0.##} J{1:0.##} X{2:0.##} Y{3:0.##} Z0\n",
                         cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
                     numberOfPointsForCmd = 4;
                     break;

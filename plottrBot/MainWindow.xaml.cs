@@ -499,8 +499,8 @@ namespace plottrBot
                         txtOut.Text += svgPlot.GetImgHeight;
 
                         //still needs:
-                        //-scaling of point values
-                        //- moving of curve on preview
+                        //-scaling of point values    //not needed
+                        //x-moving of curve on preview
                         //x-preview
 
                         //G5 Q = quadratic ^2
@@ -537,7 +537,7 @@ namespace plottrBot
             foreach (PointF point in svgPlot.PreviewPoints)
             {
                 Ellipse currentDot = new Ellipse();
-                currentDot.Margin = new Thickness(point.X, point.Y, 0, 0);
+                currentDot.Margin = new Thickness(point.X * scaleToPreview, point.Y * scaleToPreview, 0, 0);
                 currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
                 currentDot.Width = 2;
                 currentDot.Height = 2;
@@ -601,32 +601,55 @@ namespace plottrBot
 
         private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
         {
-            txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
-            currentTransition = GUITransitions.H5startDrawing;
-            handleGUIstates();
-
             try
             {
-                //countCmdSent = 0 is set when an image is sliced
-                for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                if (currentState == GUIStates.T5imgSlicedUsbConnected)
                 {
-                    if (btnPauseDrawing.Content.ToString().Contains("Continue"))
-                        break;
-
-                    string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
-                    if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
-                        sliderCmdCount.Value = lineNo;
-
-                    bool timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
-                    if (timedOut)
+                    bool timedOut = await sendSerialStringAsync("M220 S100\n");
+                    //countCmdSent = 0 is set when an image is sliced
+                    for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
                     {
-                        txtOut.Text += "Timed out\n";
-                        //break;      //exits the for loop
-                    }
+                        txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
+                        currentTransition = GUITransitions.H5startDrawing;
+                        handleGUIstates();
+                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
+                            break;
 
-                    //countCmdSent = i;        //increment number of commands sent
+                        string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
+                        if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
+                            sliderCmdCount.Value = lineNo;
+
+                        timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
+                        if (timedOut)
+                        {
+                            txtOut.Text += "Timed out\n";
+                            //break;      //exits the for loop
+                        }
+
+                        //countCmdSent = i;        //increment number of commands sent
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
                 }
-                txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                else if(currentState == GUIStates.T8svgLoadedUsbConnected)
+                {
+                    bool timedOut = await sendSerialStringAsync("M220 S50\n");
+                    countCmdSent = 0;
+                    //if pause
+                    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                    {
+                        txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, svgPlot.GeneratedGCODE.Count);
+                        currentTransition = GUITransitions.H5startDrawing;
+                        handleGUIstates();
+                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
+                            break;
+
+                        timedOut = await sendSerialStringAsync(svgPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
+                        if (timedOut)
+                            txtOut.Text += "Timed out\n";
+                        //countCmdSent = i;        //increment number of commands sent
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                }
                 
             }
             catch (Exception ex)
