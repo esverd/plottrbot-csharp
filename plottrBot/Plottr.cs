@@ -116,7 +116,7 @@ namespace plottrBot
             //    Bitmap tempImp = new Bitmap(bitmap);
             //}
 
-            int blackPixelThreshold = 60;
+            int blackPixelThreshold = 70;
 
             pixelArray = new bool[pxArrayWidth, pxArrayHeight];
             for (int x = 0; x < pxArrayWidth; x++)
@@ -269,11 +269,11 @@ namespace plottrBot
 
             ////GeneratedGCODE.Add("G1 Z1\n");        //starts with the pen not touching the canvas
             GeneratedGCODE.Add(StartGCODE + "\n");
-            GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
+            GeneratedGCODE.Add(string.Format("G1 X{0:0.###} Y{1:0.###}\n", AllLines[0].X0, AllLines[0].Y0));    //goes from home position to start of first line to draw
             foreach (TraceLine line in AllLines)
             {
                 GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!line.Draw) + "\n");
-                GeneratedGCODE.Add(string.Format("G1 X{0} Y{1}\nL{2}", line.X1, line.Y1, AllLines.IndexOf(line)));      //added L to save the line number, makes gui stuff easier in main window
+                GeneratedGCODE.Add(string.Format("G1 X{0:0.###} Y{1:0.###}\nL{2}", line.X1, line.Y1, AllLines.IndexOf(line)));      //added L to save the line number, makes gui stuff easier in main window
             }
             GeneratedGCODE.Add(EndGCODE + "\n");
 
@@ -418,17 +418,18 @@ namespace plottrBot
         private double svgHeight { get; set; }
         public double GetImgWidth { get { return svgWidth; } }      //gets width in mm
         public double GetImgHeight { get { return svgHeight; } }    //gets height in mm
+        private double bmpDimensionOffsetWidth { get; set; }        //used to correct for when bmp images converted to arrays have dimensions set in ints
+        private double bmpDimensionOffsetHeight { get; set; }
 
-        public SVGPlottr()      //for debugging remove when svg works
-        {
-        }
+        //public SVGPlottr()      //for debugging remove when svg works
+        //{
+        //}
         public SVGPlottr(string filepath)
         {
             Filepath = filepath;
             relativeToAbsX = 0;
             relativeToAbsY = 0;
-            startXforClose = -1;
-            startYforClose = -1;
+            
             PathList = new List<string>();
             GeneratedGCODE = new List<string>();
             PreviewPoints = new List<PointF>();
@@ -468,14 +469,17 @@ namespace plottrBot
         public void GeneratePreviewPoints()
         {
             PreviewPoints.Clear();
+
             double currentX = 1460 / 2.0;
             double currentY = 200;
             foreach (string gcode in GeneratedGCODE)
             {
                 if (gcode.Contains("G1"))
                 {
-                    currentX = exctractCoordFromString(gcode, 'X');
-                    currentY = exctractCoordFromString(gcode, 'Y');
+                    if(gcode.Contains('X'))
+                        currentX = exctractCoordFromString(gcode, 'X');
+                    if (gcode.Contains('Y'))
+                        currentY = exctractCoordFromString(gcode, 'Y');
                     if (gcode.Contains("Z0"))
                         PreviewPoints.Add(new PointF((float)currentX, (float)currentY));
                 }
@@ -533,8 +537,16 @@ namespace plottrBot
         {
             GeneratedGCODE.Clear();
             GeneratedGCODE.Add(StartGCODE);
+
+            //+ImgMoveY
+            bmpDimensionOffsetWidth = GetImgWidth - (int)(GetImgWidth);
+            bmpDimensionOffsetHeight = GetImgHeight - (int)(GetImgHeight);
+            //ImgMoveY = GetImgWidth;
+
             foreach (string path in PathList)
             {
+                startXforClose = -1;
+                startYforClose = -1;
                 string[] splitGoose;
                 string cmd = "";
                 if (path.Contains("d=\"M"))     //all svg commands begins with moving to the start point for the path
@@ -589,20 +601,20 @@ namespace plottrBot
                     cmdPoints.Add(parsedNumber);
             }
 
-            for (int i = 0; i < cmdPoints.Count; i++)       //handles relative to absolute coordinates and changed position on canvas
-            {
-                //TODO: I really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
-                if (i % 2 == 0)     //if coordinate on x axis
-                {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveX;// + relativeToAbsX;
-                    relativeToAbsX += cmdPoints[i] - ImgMoveX;
-                }
-                else                //if coordinate on y axis
-                {
-                    cmdPoints[i] = cmdPoints[i] + ImgMoveY;// + relativeToAbsY;
-                    relativeToAbsY += cmdPoints[i] - ImgMoveY;
-                }
-            }
+            //for (int i = 0; i < cmdPoints.Count; i++)       //handles relative to absolute coordinates and changed position on canvas
+            //{
+            //    //TODO: I really need to check and debug the logic for ImgMove and relativeToAbs, as this is completely untested. it makes sense at this point tho
+            //    if (i % 2 == 0)     //if coordinate on x axis
+            //    {
+            //        cmdPoints[i] = cmdPoints[i] + ImgMoveX;// + relativeToAbsX;
+            //        relativeToAbsX += cmdPoints[i] - ImgMoveX;
+            //    }
+            //    else                //if coordinate on y axis
+            //    {
+            //        cmdPoints[i] = cmdPoints[i] + ImgMoveY;// + relativeToAbsY;
+            //        relativeToAbsY += cmdPoints[i] - ImgMoveY;
+            //    }
+            //}
 
             return putStringTogether(cmd, cmdPoints);
         }
@@ -613,11 +625,14 @@ namespace plottrBot
             string returnString = "";
             int numberOfPointsForCmd = 0;
 
+            double totalOffsetWidth = ImgMoveX - bmpDimensionOffsetWidth;
+            double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight;
+
             switch (cmd)
             {
                 case 'm':
                 case 'M':
-                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z1\n", cmdPoints[0], cmdPoints[1]);
+                    returnString += String.Format("G1 X{0:0.###} Y{1:0.###} Z1\n", cmdPoints[0] + totalOffsetWidth, cmdPoints[1] + totalOffsetHeight);
                     numberOfPointsForCmd = 2;
                     if(startXforClose == -1 && startYforClose == -1)
                     {
@@ -627,26 +642,34 @@ namespace plottrBot
                     break;
                 //case 'l':
                 case 'L':
-                    returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", cmdPoints[0], cmdPoints[1]);
+                    returnString += String.Format("G1 X{0:0.###} Y{1:0.###} Z0\n", cmdPoints[0] + totalOffsetWidth, cmdPoints[1] + totalOffsetHeight);
                     numberOfPointsForCmd = 2;
                     break;
                 case 'z':
                 case 'Z':
-                    //returnString += String.Format("G1 X{0:0.##} Y{1:0.##} Z0\n", startXforClose, startYforClose);
+                    returnString += String.Format("G1 X{0:0.###} Y{1:0.###} Z0\n", startXforClose, startYforClose);
                     break;
                 //case 'c':
                 case 'C':
                     //returnString += "G1 Z0\n";
-                    returnString += String.Format("G5 C I{0:0.##} J{1:0.##} K{2:0.##} L{3:0.##} X{4:0.##} Y{5:0.##} Z0\n",
-                        cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3], cmdPoints[4], cmdPoints[5]);
+                    returnString += String.Format("G5 C I{0:0.###} J{1:0.###} K{2:0.###} L{3:0.###} X{4:0.###} Y{5:0.###} Z0\n",
+                        cmdPoints[0] + totalOffsetWidth, cmdPoints[1] + totalOffsetHeight, cmdPoints[2] + totalOffsetWidth, cmdPoints[3] + totalOffsetHeight, cmdPoints[4] + totalOffsetWidth, cmdPoints[5] + totalOffsetHeight);
                     numberOfPointsForCmd = 6;
                     break;
                 //case 'q':
                 case 'Q':
                     //returnString += "G1 Z0\n";
-                    returnString += String.Format("G5 Q I{0:0.##} J{1:0.##} X{2:0.##} Y{3:0.##} Z0\n",
-                        cmdPoints[0], cmdPoints[1], cmdPoints[2], cmdPoints[3]);
+                    returnString += String.Format("G5 Q I{0:0.###} J{1:0.###} X{2:0.###} Y{3:0.###} Z0\n",
+                        cmdPoints[0] + totalOffsetWidth, cmdPoints[1] + totalOffsetHeight, cmdPoints[2] + totalOffsetWidth, cmdPoints[3] + totalOffsetHeight);
                     numberOfPointsForCmd = 4;
+                    break;
+                case 'V':
+                    returnString += String.Format("G1 Y{0:0.###} Z0\n", cmdPoints[0] + totalOffsetHeight);
+                    numberOfPointsForCmd = 1;
+                    break;
+                case 'H':
+                    returnString += String.Format("G1 X{0:0.###} Z0\n", cmdPoints[0] + totalOffsetWidth);
+                    numberOfPointsForCmd = 1;
                     break;
                 default:
                     break;

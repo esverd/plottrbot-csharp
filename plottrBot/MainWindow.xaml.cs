@@ -484,10 +484,7 @@ namespace plottrBot
 
                         svgPlot = new SVGPlottr(openFileDialog.FileName);
 
-                        foreach (string gcode in svgPlot.GeneratedGCODE)
-                        {
-                            txtOut.Text += gcode;
-                        }
+                        
 
                         svgPlot.GeneratePreviewPoints();
                         loadSVGPreviewPoints();
@@ -584,10 +581,10 @@ namespace plottrBot
             txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
 
             //previewing GCODE text is nice for debugging but super slow
-            //foreach (string command in myPlot.GeneratedGCODE)
-            //{
-            //    txtOut.Text += command;     //prints the command to text output
-            //}
+            foreach (string command in myPlot.GeneratedGCODE)
+            {
+                txtOut.Text += command;     //prints the command to text output
+            }
 
             //if (btnSend.IsEnabled)
             //    enabledUIElements("both enable");
@@ -605,13 +602,14 @@ namespace plottrBot
             {
                 if (currentState == GUIStates.T5imgSlicedUsbConnected)
                 {
-                    bool timedOut = await sendSerialStringAsync("M220 S100\n");
+                    currentTransition = GUITransitions.H5startDrawing;
+                    handleGUIstates();
+                    bool timedOut = await sendSerialStringAsync("M220 S150\n");
+                    txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
                     //countCmdSent = 0 is set when an image is sliced
+                    //countCmdSent = 400;
                     for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
                     {
-                        txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
-                        currentTransition = GUITransitions.H5startDrawing;
-                        handleGUIstates();
                         if (btnPauseDrawing.Content.ToString().Contains("Continue"))
                             break;
 
@@ -632,6 +630,11 @@ namespace plottrBot
                 }
                 else if(currentState == GUIStates.T8svgLoadedUsbConnected)
                 {
+                    foreach (string gcode in svgPlot.GeneratedGCODE)
+                    {
+                        txtOut.Text += gcode;
+                    }
+
                     bool timedOut = await sendSerialStringAsync("M220 S50\n");
                     countCmdSent = 0;
                     //if pause
