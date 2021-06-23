@@ -647,7 +647,7 @@ namespace plottrBot
                     break;
                 case 'z':
                 case 'Z':
-                    returnString += String.Format("G1 X{0:0.###} Y{1:0.###} Z0\n", startXforClose, startYforClose);
+                    returnString += String.Format("G1 X{0:0.###} Y{1:0.###} Z0\n", startXforClose + totalOffsetWidth, startYforClose + totalOffsetHeight);
                     break;
                 //case 'c':
                 case 'C':

@@ -630,11 +630,6 @@ namespace plottrBot
                 }
                 else if(currentState == GUIStates.T8svgLoadedUsbConnected)
                 {
-                    foreach (string gcode in svgPlot.GeneratedGCODE)
-                    {
-                        txtOut.Text += gcode;
-                    }
-
                     bool timedOut = await sendSerialStringAsync("M220 S50\n");
                     countCmdSent = 0;
                     //if pause
@@ -871,6 +866,10 @@ namespace plottrBot
                 svgPlot.GenerateGCODE();
                 svgPlot.GeneratePreviewPoints();
                 loadSVGPreviewPoints();
+                foreach (string gcode in svgPlot.GeneratedGCODE)
+                {
+                    txtOut.Text += gcode;
+                }
             }
             else
             {
