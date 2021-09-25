@@ -18,7 +18,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+using System.Xml;
+using Svg;
+using System.Drawing.Drawing2D;
+using System.IO;
 
 namespace plottrBot
 {
@@ -27,14 +30,15 @@ namespace plottrBot
     /// </summary>
     public partial class MainWindow : Window
     {
-        Plottr myPlot;          //the object from the custom Plottr class
+        PlottrBMP myPlot;          //the object from the custom Plottr class
+        SVGPlottr svgPlot;
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
-        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing };
-        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause };
+        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing, T7svgLoaded, T8svgLoadedUsbConnected, T9svgDrawing };
+        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause, H7svgMove, H8svgOpen };
         GUIStates currentState;
         GUITransitions currentTransition;
 
@@ -59,7 +63,9 @@ namespace plottrBot
             currentState = GUIStates.T0blank;
             updateGUIelements();
 
-            
+            Plottr.StartGCODE = "G1 Z1\n";
+            Plottr.EndGCODE = txtEndGcode.Text + "\n";
+
         }
 
         private void disableAllGUIelements()
@@ -95,6 +101,8 @@ namespace plottrBot
             switch (currentState)
             {
                 case GUIStates.T0blank:
+                    canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                    canvasPreview.Background = System.Windows.Media.Brushes.White;
                     break;
                 case GUIStates.T1imgLoaded:
                     txtMoveX.IsEnabled = true;
@@ -168,6 +176,54 @@ namespace plottrBot
                     btnSendImg.IsEnabled = true;
                     btnPauseDrawing.IsEnabled = true;
                     break;
+                case GUIStates.T7svgLoaded:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    break;
+                case GUIStates.T8svgLoadedUsbConnected:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+
+                    btnCmdStart.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+
+                    btnSendImg.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    break;
+                case GUIStates.T9svgDrawing:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+
+                    btnBoundingBox.IsEnabled = true;
+                    btnCmdStart.IsEnabled = true;
+
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+
+                    btnSendImg.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    break;
                 //case GUIStates.T6drawing:
                 //    break;
                 default:
@@ -188,6 +244,10 @@ namespace plottrBot
                             break;
                         case GUITransitions.H3usbOpen:
                             currentState = GUIStates.T3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T7svgLoaded;
                             updateGUIelements();
                             break;
                         default:
@@ -237,6 +297,10 @@ namespace plottrBot
                             break;
                         case GUITransitions.H4usbClose:
                             currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
@@ -294,6 +358,83 @@ namespace plottrBot
                             break;
                     }
                     break;
+                case GUIStates.T7svgLoaded:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H3usbOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H7svgMove:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            //svgPlot.GenerateGCODE();
+                            //svgPlot.GeneratePreviewPoints();
+                            //loadSVGPreviewPoints();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T8svgLoadedUsbConnected:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            currentState = GUIStates.T9svgDrawing;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H7svgMove:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            //svgPlottr.generateGcode
+                            //svgPlottr.previewv
+                            //svgPlot.GenerateGCODE();
+                            //svgPlot.GeneratePreviewPoints();
+                            //loadSVGPreviewPoints();
+                            break;
+                        case GUITransitions.H8svgOpen:
+                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.T9svgDrawing:
+                    switch (currentTransition)
+                    {
+                        case GUITransitions.H2imgClear:
+                            currentState = GUIStates.T0blank;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H4usbClose:
+                            currentState = GUIStates.T7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUITransitions.H5startDrawing:
+                            currentState = GUIStates.T9svgDrawing;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -302,20 +443,91 @@ namespace plottrBot
 
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image file (*.bmp) | *.bmp";
-            //bool result = (bool)openFileDialog.ShowDialog();
-            if ((bool)openFileDialog.ShowDialog())
+            try
             {
-                myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
+                //bool result = (bool)openFileDialog.ShowDialog();
+                if ((bool)openFileDialog.ShowDialog())
+                {
+                    if (openFileDialog.FileName.EndsWith(".bmp"))
+                    {
+                        myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
 
-                canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);     //places the image in the center of preview canvas
+                        canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
 
-                currentTransition = GUITransitions.H0imgOpen;
-                handleGUIstates();
+                        //enables buttons that need the image to work
+                        //enabledUIElements("img enable");
+                        currentTransition = GUITransitions.H0imgOpen;
+                        handleGUIstates();
+                    }
+                    else if (openFileDialog.FileName.EndsWith(".svg"))
+                    {
+
+                        //c# will split svg into following components: M, L, Z, C, Q
+                        //c# will then send these components as gcode to the robot
+                        //the robot will then read and handle the gcode calling on the necessary type ov movement function
+
+                        svgPlot = new SVGPlottr(openFileDialog.FileName);
+
+                        
+
+                        svgPlot.GeneratePreviewPoints();
+                        loadSVGPreviewPoints();
+
+                        currentTransition = GUITransitions.H8svgOpen;
+                        handleGUIstates();
+
+                        txtOut.Text += svgPlot.GetImgWidth + "\n";
+                        txtOut.Text += svgPlot.GetImgHeight;
+
+                        //still needs:
+                        //-scaling of point values    //not needed
+                        //x-moving of curve on preview
+                        //x-preview
+
+                        //G5 Q = quadratic ^2
+                        //G5 C = cubic ^3
+
+                        //svg commands:
+                        //m = G1 no draw
+                        //l = G1 draw
+                        //z = G1 draw
+                        //c = G5 C
+                        //q = G5 Q
+
+
+
+
+
+
+
+
+                    }
+                    else
+                        throw new Exception("Not supported file type");
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
+                MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+        }
+
+        private void loadSVGPreviewPoints()
+        {
+            foreach (PointF point in svgPlot.PreviewPoints)
+            {
+                Ellipse currentDot = new Ellipse();
+                currentDot.Margin = new Thickness(point.X * scaleToPreview, point.Y * scaleToPreview, 0, 0);
+                currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
+                currentDot.Width = 2;
+                currentDot.Height = 2;
+                canvasPreview.Children.Add(currentDot);
             }
         }
 
@@ -324,8 +536,8 @@ namespace plottrBot
             countCmdSent = 0;
 
             //read start and end gcode from text boxes
-            myPlot.StartGCODE = "G1 Z1\n";
-            myPlot.EndGCODE = txtEndGcode.Text + "\n";
+            //Plottr.StartGCODE = "G1 Z1\n";
+            //Plottr.EndGCODE = txtEndGcode.Text + "\n";
             //myPlot.GeneratedGCODE.Clear();
             //canvasPreview.Children.Clear();
 
@@ -357,6 +569,16 @@ namespace plottrBot
 
             txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
 
+            //previewing GCODE text is nice for debugging but super slow
+            foreach (string command in myPlot.GeneratedGCODE)
+            {
+                txtOut.Text += command;     //prints the command to text output
+            }
+
+            //if (btnSend.IsEnabled)
+            //    enabledUIElements("both enable");
+            //btnBoundingBox.IsEnabled = true;
+
             currentTransition = GUITransitions.H1imgSlice;
             handleGUIstates();
 
@@ -365,32 +587,56 @@ namespace plottrBot
 
         private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
         {
-            txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
-            currentTransition = GUITransitions.H5startDrawing;
-            handleGUIstates();
-
             try
             {
-                //countCmdSent = 0 is set when an image is sliced
-                for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                if (currentState == GUIStates.T5imgSlicedUsbConnected)
                 {
-                    if (btnPauseDrawing.Content.ToString().Contains("Continue"))
-                        break;
-
-                    string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
-                    if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
-                        sliderCmdCount.Value = lineNo;
-
-                    bool timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
-                    if (timedOut)
+                    currentTransition = GUITransitions.H5startDrawing;
+                    handleGUIstates();
+                    bool timedOut = await sendSerialStringAsync("M220 S150\n");
+                    txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
+                    //countCmdSent = 0 is set when an image is sliced
+                    //countCmdSent = 400;
+                    for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
                     {
-                        txtOut.Text += "Timed out\n";
-                        //break;      //exits the for loop
-                    }
+                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
+                            break;
 
-                    //countCmdSent = i;        //increment number of commands sent
+                        string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
+                        if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
+                            sliderCmdCount.Value = lineNo;
+
+                        timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
+                        if (timedOut)
+                        {
+                            txtOut.Text += "Timed out\n";
+                            //break;      //exits the for loop
+                        }
+
+                        //countCmdSent = i;        //increment number of commands sent
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
                 }
-                txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                else if(currentState == GUIStates.T8svgLoadedUsbConnected)
+                {
+                    bool timedOut = await sendSerialStringAsync("M220 S50\n");
+                    countCmdSent = 0;
+                    //if pause
+                    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                    {
+                        txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, svgPlot.GeneratedGCODE.Count);
+                        currentTransition = GUITransitions.H5startDrawing;
+                        handleGUIstates();
+                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
+                            break;
+
+                        timedOut = await sendSerialStringAsync(svgPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
+                        if (timedOut)
+                            txtOut.Text += "Timed out\n";
+                        //countCmdSent = i;        //increment number of commands sent
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                }
                 
             }
             catch (Exception ex)
@@ -528,42 +774,69 @@ namespace plottrBot
 
         private void btnMoveImg_Click(object sender, RoutedEventArgs e)
         {
-            myPlot.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
-            myPlot.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
-            placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+            Plottr.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
+            Plottr.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
+            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
         }
 
         private void btnCenterImg_Click(object sender, RoutedEventArgs e)
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
-                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+                double currentPicWidth;
+                double currentPicHeight;
+                if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+                {
+                    currentPicWidth = svgPlot.GetImgWidth;
+                    currentPicHeight = svgPlot.GetImgHeight;
+                }
+                else
+                {
+                    currentPicWidth = myPlot.GetImgWidth;
+                    currentPicHeight = myPlot.GetImgHeight;
+                }
+                Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - currentPicWidth ) / 2);
+                Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - currentPicHeight) / 2);
+                placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                 btnCenterImg.Content = "Move top left";
             }
             else if (btnCenterImg.Content.ToString().Contains("top left"))
             {
-                myPlot.ImgMoveX = 0;
-                myPlot.ImgMoveY = 0;
-                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+                Plottr.ImgMoveX = 0;
+                Plottr.ImgMoveY = 0;
+                placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                 btnCenterImg.Content = "Center image";
             }   
         }
 
         void placeImageAt(double x, double y)
         {
-            canvasPreview.Children.Clear();     //removes potential preview lines already drawn
-            ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
-            previewImageBrush.Stretch = Stretch.Fill;
-            previewImageBrush.ViewportUnits = BrushMappingMode.Absolute;
-            previewImageBrush.Viewport = new Rect(x * scaleToPreview, y * scaleToPreview, myPlot.GetImgWidth * scaleToPreview, myPlot.GetImgHeight * scaleToPreview);     //fill the image to fit this box
-            previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
-            previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
+            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            canvasPreview.Background = System.Windows.Media.Brushes.White;
+            if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+            {
+                svgPlot.GenerateGCODE();
+                svgPlot.GeneratePreviewPoints();
+                loadSVGPreviewPoints();
+                foreach (string gcode in svgPlot.GeneratedGCODE)
+                {
+                    txtOut.Text += gcode;
+                }
+            }
+            else
+            {
+                ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
+                previewImageBrush.Stretch = Stretch.Fill;
+                previewImageBrush.ViewportUnits = BrushMappingMode.Absolute;
+                previewImageBrush.Viewport = new Rect(x * scaleToPreview, y * scaleToPreview, myPlot.GetImgWidth * scaleToPreview, myPlot.GetImgHeight * scaleToPreview);     //fill the image to fit this box
+                previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
+                previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
+                //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
+                canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
+            }
 
-            canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
-            txtMoveX.Text = myPlot.ImgMoveX.ToString();
-            txtMoveY.Text = myPlot.ImgMoveY.ToString();
+            txtMoveX.Text = Plottr.ImgMoveX.ToString();
+            txtMoveY.Text = Plottr.ImgMoveY.ToString();
         }
 
         
@@ -644,8 +917,7 @@ namespace plottrBot
         private void btnClearImg_Click(object sender, RoutedEventArgs e)
         {
             myPlot = null;
-            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-            canvasPreview.Background = System.Windows.Media.Brushes.White;
+            svgPlot = null;
             currentTransition = GUITransitions.H2imgClear;
             handleGUIstates();
         }
@@ -681,6 +953,13 @@ namespace plottrBot
             //draw box on canvas
             //go to home position
 
+            //BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);
+
+            //txtOut.Text = myPlot.BoundingCoordinates.X0 + "\n";
+            //txtOut.Text += myPlot.BoundingCoordinates.Y0 + "\n";
+            //txtOut.Text += myPlot.BoundingCoordinates.X1 + "\n";
+            //txtOut.Text += myPlot.BoundingCoordinates.Y1 + "\n";
+            
             TraceLine topLeftToRight = new TraceLine(myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview);
             TraceLine rightDown = new TraceLine(myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y0 * scaleToPreview, myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview);
             TraceLine downRightToLeft = new TraceLine(myPlot.BoundingCoordinates.X1 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview, myPlot.BoundingCoordinates.X0 * scaleToPreview, myPlot.BoundingCoordinates.Y1 * scaleToPreview);
