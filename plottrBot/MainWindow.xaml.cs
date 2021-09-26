@@ -450,11 +450,13 @@ namespace plottrBot
                 //bool result = (bool)openFileDialog.ShowDialog();
                 if ((bool)openFileDialog.ShowDialog())
                 {
-                    if (openFileDialog.FileName.EndsWith(".bmp"))
+                    btnClearImg_Click(sender, e);     //removes previous images/elements from the canvas
+                    
+
+                    if (openFileDialog.FileName.EndsWith(".bmp"))      //loaded .bmp image
                     {
                         myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
-
-                        canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                        
                         Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
                         Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
                         placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
@@ -464,48 +466,62 @@ namespace plottrBot
                         currentTransition = GUITransitions.H0imgOpen;
                         handleGUIstates();
                     }
-                    else if (openFileDialog.FileName.EndsWith(".svg"))
+                    else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
                     {
-
                         //c# will split svg into following components: M, L, Z, C, Q
                         //c# will then send these components as gcode to the robot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
                         svgPlot = new SVGPlottr(openFileDialog.FileName);
 
-                        
+                        //Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
+                        //Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
 
+                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
+
+
+
+                        //svgPlot.GenerateGCODE();
                         svgPlot.GeneratePreviewPoints();
-                        loadSVGPreviewPoints();
 
+                        //Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                        //Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
+
+                        //loadSVGPreviewPoints();
+
+                        //svgPlot.GenerateGCODE();
+                        //svgPlot.GeneratePreviewPoints();
+                        //loadSVGPreviewPoints();
+                        //foreach (string gcode in svgPlot.GeneratedGCODE)
+                        //{
+                        //    txtOut.Text += gcode;
+                        //}
+
+                        //double currentPicWidth;
+                        //double currentPicHeight;
+                        //if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+                        //{
+                        //    currentPicWidth = svgPlot.GetImgWidth;
+                        //    currentPicHeight = svgPlot.GetImgHeight;
+                        //}
+                        //else
+                        //{
+                        //    currentPicWidth = myPlot.GetImgWidth;
+                        //    currentPicHeight = myPlot.GetImgHeight;
+                        //}
                         currentTransition = GUITransitions.H8svgOpen;
                         handleGUIstates();
 
-                        txtOut.Text += svgPlot.GetImgWidth + "\n";
-                        txtOut.Text += svgPlot.GetImgHeight;
+                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
+                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
+                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+                        //btnCenterImg.Content = "Move top left";
 
-                        //still needs:
-                        //-scaling of point values    //not needed
-                        //x-moving of curve on preview
-                        //x-preview
+                        
 
-                        //G5 Q = quadratic ^2
-                        //G5 C = cubic ^3
-
-                        //svg commands:
-                        //m = G1 no draw
-                        //l = G1 draw
-                        //z = G1 draw
-                        //c = G5 C
-                        //q = G5 Q
-
-
-
-
-
-
-
-
+                        //txtOut.Text += svgPlot.GetImgWidth + "\n";
+                        //txtOut.Text += svgPlot.GetImgHeight;
                     }
                     else
                         throw new Exception("Not supported file type");
@@ -518,18 +534,18 @@ namespace plottrBot
             }
         }
 
-        private void loadSVGPreviewPoints()
-        {
-            foreach (PointF point in svgPlot.PreviewPoints)
-            {
-                Ellipse currentDot = new Ellipse();
-                currentDot.Margin = new Thickness(point.X * scaleToPreview, point.Y * scaleToPreview, 0, 0);
-                currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
-                currentDot.Width = 2;
-                currentDot.Height = 2;
-                canvasPreview.Children.Add(currentDot);
-            }
-        }
+        //private void loadSVGPreviewPoints()
+        //{
+        //    foreach (PointF point in svgPlot.PreviewPoints)
+        //    {
+        //        Ellipse currentDot = new Ellipse();
+        //        currentDot.Margin = new Thickness(point.X * scaleToPreview, point.Y * scaleToPreview, 0, 0);
+        //        currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
+        //        currentDot.Width = 2;
+        //        currentDot.Height = 2;
+        //        canvasPreview.Children.Add(currentDot);
+        //    }
+        //}
 
         private async void btnSliceImg_Click(object sender, RoutedEventArgs e)     //slices the image to individual lines that are either drawn or moved without drawing
         {
@@ -570,10 +586,10 @@ namespace plottrBot
             txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
 
             //previewing GCODE text is nice for debugging but super slow
-            foreach (string command in myPlot.GeneratedGCODE)
-            {
-                txtOut.Text += command;     //prints the command to text output
-            }
+            //foreach (string command in myPlot.GeneratedGCODE)
+            //{
+            //    txtOut.Text += command;     //prints the command to text output
+            //}
 
             //if (btnSend.IsEnabled)
             //    enabledUIElements("both enable");
@@ -774,9 +790,7 @@ namespace plottrBot
 
         private void btnMoveImg_Click(object sender, RoutedEventArgs e)
         {
-            Plottr.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
-            Plottr.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
-            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+            placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text));
         }
 
         private void btnCenterImg_Click(object sender, RoutedEventArgs e)
@@ -813,14 +827,23 @@ namespace plottrBot
         {
             canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
             canvasPreview.Background = System.Windows.Media.Brushes.White;
+
+            Plottr.ImgMoveX = (int)x;
+            Plottr.ImgMoveY = (int)y;
+
             if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
             {
                 svgPlot.GenerateGCODE();
                 svgPlot.GeneratePreviewPoints();
-                loadSVGPreviewPoints();
-                foreach (string gcode in svgPlot.GeneratedGCODE)
+                //loadSVGPreviewPoints();
+                foreach (PointF point in svgPlot.PreviewPoints)
                 {
-                    txtOut.Text += gcode;
+                    Ellipse currentDot = new Ellipse();
+                    currentDot.Margin = new Thickness(point.X * scaleToPreview, point.Y * scaleToPreview, 0, 0);
+                    currentDot.Fill = System.Windows.Media.Brushes.DarkBlue;
+                    currentDot.Width = 2;
+                    currentDot.Height = 2;
+                    canvasPreview.Children.Add(currentDot);
                 }
             }
             else
@@ -918,6 +941,8 @@ namespace plottrBot
         {
             myPlot = null;
             svgPlot = null;
+            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            canvasPreview.Background = System.Windows.Media.Brushes.White;
             currentTransition = GUITransitions.H2imgClear;
             handleGUIstates();
         }
@@ -1001,16 +1026,26 @@ namespace plottrBot
             myLine.Y2 = leftUp.Y1;
             canvasPreview.Children.Add(myLine);
 
-
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));    //goes from home position
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z{2}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0, !(bool)checkBoxDrawingBoundingBox.IsChecked));    //draws first line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y1));              //draws second line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y1));  //draws third line
-            await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));                    //draws fourth line
-
+            int penPosition = 1;    //pen not touching canvas
             if ((bool)checkBoxDrawingBoundingBox.IsChecked)
+                penPosition = 0;
+
+            try
+            {
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));    //goes from home position
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1} Z{2}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y0, penPosition));    //draws first line
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X1, myPlot.BoundingCoordinates.Y1));              //draws second line
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y1));  //draws third line
+                await sendSerialStringAsync(string.Format("G1 X{0} Y{1}\n", myPlot.BoundingCoordinates.X0, myPlot.BoundingCoordinates.Y0));                    //draws fourth line
+
+                //if ((bool)checkBoxDrawingBoundingBox.IsChecked)
                 await sendSerialStringAsync("G1 Z1\n");       //pen touches the canvas
-            await sendSerialStringAsync("G28\n");                    //goes to home position
+                await sendSerialStringAsync("G28\n");                    //goes to home position
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
 
         }
 
@@ -1067,6 +1102,7 @@ namespace plottrBot
             Properties.Settings.Default.RobotWidth = Convert.ToInt32(txtRWidth.Text);
             Properties.Settings.Default.RobotHeight = Convert.ToInt32(txtRHeight.Text);
             Properties.Settings.Default.Save();
+            MessageBox.Show("Please restart the program for the changes to take effect.", "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
     }//main window
 }

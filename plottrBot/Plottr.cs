@@ -361,8 +361,8 @@ namespace plottrBot
         {
             PreviewPoints.Clear();
 
-            double currentX = 1460 / 2.0;
-            double currentY = 200;
+            double currentX = RobotWidth / 2.0;
+            double currentY = RobotHeight / 2.0;
             foreach (string gcode in GeneratedGCODE)
             {
                 if (gcode.Contains("G1"))
