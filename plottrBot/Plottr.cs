@@ -293,6 +293,11 @@ namespace plottrBot
 
     }
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 
     class SVGPlottr : Plottr
     {
@@ -517,7 +522,11 @@ namespace plottrBot
             int numberOfPointsForCmd = 0;
 
             double totalOffsetWidth = ImgMoveX - bmpDimensionOffsetWidth;
+<<<<<<< Updated upstream
             double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight;
+=======
+            double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight + 2;     //temporary correction for misalignment between bmp and svg
+>>>>>>> Stashed changes
 
             switch (cmd)
             {
@@ -574,5 +583,9 @@ namespace plottrBot
 
     }
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 }
 

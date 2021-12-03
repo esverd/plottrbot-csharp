@@ -41,6 +41,9 @@ namespace plottrBot
         enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause, H7svgMove, H8svgOpen };
         GUIStates currentState;
         GUITransitions currentTransition;
+        enum imgType { bmp, svg};
+        imgType loadedImgType;
+
 
         public MainWindow()
         {
@@ -445,6 +448,7 @@ namespace plottrBot
         {
             try
             {
+<<<<<<< Updated upstream
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
                 //bool result = (bool)openFileDialog.ShowDialog();
@@ -512,12 +516,17 @@ namespace plottrBot
                         //}
                         currentTransition = GUITransitions.H8svgOpen;
                         handleGUIstates();
+=======
+<<<<<<< Updated upstream
+                myPlot = new Plottr(openFileDialog.FileName);      //creates a plottr object with the selected image
+>>>>>>> Stashed changes
 
                         Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
                         Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
                         placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
                         //btnCenterImg.Content = "Move top left";
 
+<<<<<<< Updated upstream
                         
 
                         //txtOut.Text += svgPlot.GetImgWidth + "\n";
@@ -525,12 +534,59 @@ namespace plottrBot
                     }
                     else
                         throw new Exception("Not supported file type");
+=======
+                currentTransition = GUITransitions.H0imgOpen;
+                handleGUIstates();
+=======
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
+                //bool result = (bool)openFileDialog.ShowDialog();
+                if ((bool)openFileDialog.ShowDialog())
+                {
+                    clearEverything();     //removes previous images/elements from the canvas
+                    
+                    if (openFileDialog.FileName.EndsWith(".bmp"))      //loaded .bmp image
+                    {
+                        loadedImgType = imgType.bmp;
+                        myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
+
+                        currentTransition = GUITransitions.H0imgOpen;
+                        handleGUIstates();
+
+                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                    }
+                    else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
+                    {
+                        //c# will split svg into following components: M, L, Z, C, Q
+                        //c# will then send these components as gcode to the robot
+                        //the robot will then read and handle the gcode calling on the necessary type ov movement function
+
+                        loadedImgType = imgType.svg;
+                        svgPlot = new SVGPlottr(openFileDialog.FileName);
+                        svgPlot.GeneratePreviewPoints();
+
+                        currentTransition = GUITransitions.H8svgOpen;
+                        handleGUIstates();
+
+                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
+                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
+                    }
+                    else
+                        throw new Exception("Not supported file type");
+
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
+>>>>>>> Stashed changes
                 }
             }
             catch (Exception ex)
             {
                 string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
                 MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
             }
         }
 
@@ -605,7 +661,16 @@ namespace plottrBot
         {
             try
             {
+<<<<<<< Updated upstream
                 if (currentState == GUIStates.T5imgSlicedUsbConnected)
+=======
+<<<<<<< Updated upstream
+                //countCmdSent = 0 is set when an image is sliced
+                for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+=======
+                if (loadedImgType == imgType.bmp)
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
                 {
                     currentTransition = GUITransitions.H5startDrawing;
                     handleGUIstates();
@@ -622,6 +687,13 @@ namespace plottrBot
                         if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
                             sliderCmdCount.Value = lineNo;
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+                    bool timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
+                    if (timedOut)
+=======
+>>>>>>> Stashed changes
                         timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
                         if (timedOut)
                         {
@@ -630,6 +702,22 @@ namespace plottrBot
                         }
 
                         //countCmdSent = i;        //increment number of commands sent
+<<<<<<< Updated upstream
+=======
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                }
+                else if(loadedImgType == imgType.svg)
+                {
+                    bool timedOut = await sendSerialStringAsync("M220 S50\n");
+                    countCmdSent = 0;
+                    //if pause
+                    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+>>>>>>> Stashed changes
+                    {
+                        txtOut.Text += "Timed out\n";
+                        //break;      //exits the for loop
+>>>>>>> Stashed changes
                     }
                     txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
                 }
@@ -672,43 +760,6 @@ namespace plottrBot
         {
             if (e.Key == Key.Return)
                 btnSend_Click(sender, e);
-        }
-
-        private bool sendSerialString(string message)       //not used anymore
-        {
-            try
-            {
-                bool timedOut = false;
-                if (port.IsOpen)
-                {
-                    port.Write(message);       //sends the current command over usb
-
-                    //wait for GO from arduino
-                    double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
-
-                    string incoming = "";
-                    while (!incoming.Contains("GO"))
-                    {
-                        if(port.BytesToRead > 0)
-                            incoming = port.ReadLine();     //reads the reply from arduino
-                        if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
-                        {
-                            timedOut = true;        //flag timeout event
-                            //txtOut.Text += "Timed out";
-                            throw new Exception("Timed out. Recheck USB connection.");
-                        }
-                    }
-                }
-                else
-                    throw new Exception("Connect USB COM port");
-                return timedOut;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return true;
-            }
-
         }
 
         private async Task<bool> sendSerialStringAsync(string message)
@@ -797,9 +848,20 @@ namespace plottrBot
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
+<<<<<<< Updated upstream
                 double currentPicWidth;
                 double currentPicHeight;
                 if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+=======
+<<<<<<< Updated upstream
+                myPlot.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                myPlot.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                placeImageAt(myPlot.ImgMoveX, myPlot.ImgMoveY);
+=======
+                double currentPicWidth;
+                double currentPicHeight;
+                if (loadedImgType == imgType.svg)
+>>>>>>> Stashed changes
                 {
                     currentPicWidth = svgPlot.GetImgWidth;
                     currentPicHeight = svgPlot.GetImgHeight;
@@ -812,6 +874,10 @@ namespace plottrBot
                 Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - currentPicWidth ) / 2);
                 Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - currentPicHeight) / 2);
                 placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
                 btnCenterImg.Content = "Move top left";
             }
             else if (btnCenterImg.Content.ToString().Contains("top left"))
@@ -825,13 +891,33 @@ namespace plottrBot
 
         void placeImageAt(double x, double y)
         {
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+            canvasPreview.Children.Clear();     //removes potential preview lines already drawn
+            ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
+            previewImageBrush.Stretch = Stretch.Fill;
+            previewImageBrush.ViewportUnits = BrushMappingMode.Absolute;
+            previewImageBrush.Viewport = new Rect(x * scaleToPreview, y * scaleToPreview, myPlot.GetImgWidth * scaleToPreview, myPlot.GetImgHeight * scaleToPreview);     //fill the image to fit this box
+            previewImageBrush.ViewboxUnits = BrushMappingMode.Absolute;
+            previewImageBrush.Viewbox = new Rect(0, 0, myPlot.Img.Width, myPlot.Img.Height);    //set the image size to itself to avoid cropping
+
+            canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
+            txtMoveX.Text = myPlot.ImgMoveX.ToString();
+            txtMoveY.Text = myPlot.ImgMoveY.ToString();
+=======
+>>>>>>> Stashed changes
             canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
             canvasPreview.Background = System.Windows.Media.Brushes.White;
 
             Plottr.ImgMoveX = (int)x;
             Plottr.ImgMoveY = (int)y;
 
+<<<<<<< Updated upstream
             if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+=======
+            if (loadedImgType == imgType.svg)
+>>>>>>> Stashed changes
             {
                 svgPlot.GenerateGCODE();
                 svgPlot.GeneratePreviewPoints();
@@ -860,6 +946,10 @@ namespace plottrBot
 
             txtMoveX.Text = Plottr.ImgMoveX.ToString();
             txtMoveY.Text = Plottr.ImgMoveY.ToString();
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         }
 
         
@@ -939,12 +1029,17 @@ namespace plottrBot
 
         private void btnClearImg_Click(object sender, RoutedEventArgs e)
         {
+            clearEverything();
+            currentTransition = GUITransitions.H2imgClear;
+            handleGUIstates();
+        } 
+
+        private void clearEverything()
+        {
             myPlot = null;
             svgPlot = null;
             canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
             canvasPreview.Background = System.Windows.Media.Brushes.White;
-            currentTransition = GUITransitions.H2imgClear;
-            handleGUIstates();
         }
 
         private void btnSliderIncDec(object sender, RoutedEventArgs e)      //increases or decreases the slider by one based on button press
@@ -1103,6 +1198,42 @@ namespace plottrBot
             Properties.Settings.Default.RobotHeight = Convert.ToInt32(txtRHeight.Text);
             Properties.Settings.Default.Save();
             MessageBox.Show("Please restart the program for the changes to take effect.", "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+        }
+
+        private bool sendSerialString(string message)       //not used anymore
+        {
+            try
+            {
+                bool timedOut = false;
+                if (port.IsOpen)
+                {
+                    port.Write(message);       //sends the current command over usb
+
+                    //wait for GO from arduino
+                    double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
+
+                    string incoming = "";
+                    while (!incoming.Contains("GO"))
+                    {
+                        if (port.BytesToRead > 0)
+                            incoming = port.ReadLine();     //reads the reply from arduino
+                        if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
+                        {
+                            timedOut = true;        //flag timeout event
+                            //txtOut.Text += "Timed out";
+                            throw new Exception("Timed out. Recheck USB connection.");
+                        }
+                    }
+                }
+                else
+                    throw new Exception("Connect USB COM port");
+                return timedOut;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return true;
+            }
         }
     }//main window
 }
