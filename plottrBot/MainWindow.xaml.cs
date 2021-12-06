@@ -37,10 +37,16 @@ namespace plottrBot
         double scaleToPreview;
         int countCmdSent;
         Line selectedPreviewLine;
-        enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing, T7svgLoaded, T8svgLoadedUsbConnected, T9svgDrawing };
-        enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause, H7svgMove, H8svgOpen };
+        //enum GUIStates { T0blank, T1imgLoaded, T2imgSliced, T3usbConnected, T4imgLoadedUsbConnected, T5imgSlicedUsbConnected, T6drawing, T7svgLoaded, T8svgLoadedUsbConnected, T9svgDrawing };
+        //enum GUITransitions { H0imgOpen, H1imgSlice, H2imgClear, H3usbOpen, H4usbClose, H5startDrawing, H6pause, H7svgMove, H8svgOpen };
+        enum GUIStates { S0blank, S1bmpLoaded, S2bmpSliced, S3usbConnected, S4bmpLoadedUsbConnected, S5bmpSlicedUsbConnected, S6bmpDrawing, S7svgLoaded, S8svgLoadedUsbConnected, S9svgDrawing };
+        enum GUIActions { A0bmpOpen, A1bmpSlice, A2clear, A3svgOpen, A4usbOpen, A5startDrawing, A6usbClose };
+
         GUIStates currentState;
-        GUITransitions currentTransition;
+        GUIActions currentTransition;
+        enum imgType { bmp, svg };
+        imgType loadedImgType;
+
 
         public MainWindow()
         {
@@ -60,8 +66,10 @@ namespace plottrBot
 
             selectedPreviewLine = new Line();
 
-            currentState = GUIStates.T0blank;
+            currentState = GUIStates.S0blank;
             updateGUIelements();
+            //currentState = GUIStates.T0blank;
+            //updateGUIelements();
 
             Plottr.StartGCODE = "G1 Z1\n";
             Plottr.EndGCODE = txtEndGcode.Text + "\n";
@@ -98,13 +106,11 @@ namespace plottrBot
         private void updateGUIelements()
         {
             disableAllGUIelements();
-            switch (currentState)
+            switch(currentState)
             {
-                case GUIStates.T0blank:
-                    canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-                    canvasPreview.Background = System.Windows.Media.Brushes.White;
+                case GUIStates.S0blank:
                     break;
-                case GUIStates.T1imgLoaded:
+                case GUIStates.S1bmpLoaded:
                     txtMoveX.IsEnabled = true;
                     txtMoveY.IsEnabled = true;
                     btnMoveImg.IsEnabled = true;
@@ -112,19 +118,18 @@ namespace plottrBot
                     btnClearImg.IsEnabled = true;
                     btnSliceImg.IsEnabled = true;
                     break;
-                case GUIStates.T2imgSliced:
+                case GUIStates.S2bmpSliced:
                     txtMoveX.IsEnabled = true;
                     txtMoveY.IsEnabled = true;
                     btnMoveImg.IsEnabled = true;
                     btnCenterImg.IsEnabled = true;
                     btnClearImg.IsEnabled = true;
                     btnSliceImg.IsEnabled = true;
-                    txtCmdStart.IsEnabled = true;
                     sliderCmdCount.IsEnabled = true;
                     btnSliderDecrease.IsEnabled = true;
                     btnSliderIncrease.IsEnabled = true;
                     break;
-                case GUIStates.T3usbConnected:
+                case GUIStates.S3usbConnected:
                     txtSerialCmd.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnEnableStepper.IsEnabled = true;
@@ -133,14 +138,13 @@ namespace plottrBot
                     btnNoPenTouchCanvas.IsEnabled = true;
                     btnHomePosition.IsEnabled = true;
                     break;
-                case GUIStates.T4imgLoadedUsbConnected:
+                case GUIStates.S4bmpLoadedUsbConnected:
                     txtMoveX.IsEnabled = true;
                     txtMoveY.IsEnabled = true;
                     btnMoveImg.IsEnabled = true;
                     btnCenterImg.IsEnabled = true;
                     btnClearImg.IsEnabled = true;
                     btnSliceImg.IsEnabled = true;
-
                     txtSerialCmd.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnEnableStepper.IsEnabled = true;
@@ -149,22 +153,41 @@ namespace plottrBot
                     btnNoPenTouchCanvas.IsEnabled = true;
                     btnHomePosition.IsEnabled = true;
                     break;
-                case GUIStates.T5imgSlicedUsbConnected:
-                case GUIStates.T6drawing:
+                case GUIStates.S5bmpSlicedUsbConnected:
                     txtMoveX.IsEnabled = true;
                     txtMoveY.IsEnabled = true;
                     btnMoveImg.IsEnabled = true;
                     btnCenterImg.IsEnabled = true;
                     btnClearImg.IsEnabled = true;
                     btnSliceImg.IsEnabled = true;
-                    txtCmdStart.IsEnabled = true;
+                    btnBoundingBox.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    btnSendImg.IsEnabled = true;
+                    btnCmdStart.IsEnabled = true;
                     sliderCmdCount.IsEnabled = true;
                     btnSliderDecrease.IsEnabled = true;
                     btnSliderIncrease.IsEnabled = true;
-
+                    txtSerialCmd.IsEnabled = true;
+                    btnSend.IsEnabled = true;
+                    btnEnableStepper.IsEnabled = true;
+                    btnDisableStepper.IsEnabled = true;
+                    btnPenTouchCanvas.IsEnabled = true;
+                    btnNoPenTouchCanvas.IsEnabled = true;
+                    btnHomePosition.IsEnabled = true;
+                    break;
+                case GUIStates.S6bmpDrawing:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnSliceImg.IsEnabled = true;
                     btnBoundingBox.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    btnSendImg.IsEnabled = true;
                     btnCmdStart.IsEnabled = true;
-
+                    sliderCmdCount.IsEnabled = true;
+                    btnSliderDecrease.IsEnabled = true;
+                    btnSliderIncrease.IsEnabled = true;
                     txtSerialCmd.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnEnableStepper.IsEnabled = true;
@@ -172,26 +195,26 @@ namespace plottrBot
                     btnPenTouchCanvas.IsEnabled = true;
                     btnNoPenTouchCanvas.IsEnabled = true;
                     btnHomePosition.IsEnabled = true;
-
-                    btnSendImg.IsEnabled = true;
+                    break;
+                case GUIStates.S7svgLoaded:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
+                    break;
+                case GUIStates.S8svgLoadedUsbConnected:
+                    txtMoveX.IsEnabled = true;
+                    txtMoveY.IsEnabled = true;
+                    btnMoveImg.IsEnabled = true;
+                    btnCenterImg.IsEnabled = true;
+                    btnClearImg.IsEnabled = true;
                     btnPauseDrawing.IsEnabled = true;
-                    break;
-                case GUIStates.T7svgLoaded:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    break;
-                case GUIStates.T8svgLoadedUsbConnected:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-
+                    btnSendImg.IsEnabled = true;
                     btnCmdStart.IsEnabled = true;
-
+                    sliderCmdCount.IsEnabled = true;
+                    btnSliderDecrease.IsEnabled = true;
+                    btnSliderIncrease.IsEnabled = true;
                     txtSerialCmd.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnEnableStepper.IsEnabled = true;
@@ -199,20 +222,18 @@ namespace plottrBot
                     btnPenTouchCanvas.IsEnabled = true;
                     btnNoPenTouchCanvas.IsEnabled = true;
                     btnHomePosition.IsEnabled = true;
-
-                    btnSendImg.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
                     break;
-                case GUIStates.T9svgDrawing:
+                case GUIStates.S9svgDrawing:
                     txtMoveX.IsEnabled = true;
                     txtMoveY.IsEnabled = true;
                     btnMoveImg.IsEnabled = true;
                     btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-
-                    btnBoundingBox.IsEnabled = true;
+                    btnPauseDrawing.IsEnabled = true;
+                    btnSendImg.IsEnabled = true;
                     btnCmdStart.IsEnabled = true;
-
+                    sliderCmdCount.IsEnabled = true;
+                    btnSliderDecrease.IsEnabled = true;
+                    btnSliderIncrease.IsEnabled = true;
                     txtSerialCmd.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnEnableStepper.IsEnabled = true;
@@ -220,12 +241,7 @@ namespace plottrBot
                     btnPenTouchCanvas.IsEnabled = true;
                     btnNoPenTouchCanvas.IsEnabled = true;
                     btnHomePosition.IsEnabled = true;
-
-                    btnSendImg.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
                     break;
-                //case GUIStates.T6drawing:
-                //    break;
                 default:
                     break;
             }
@@ -235,200 +251,242 @@ namespace plottrBot
         {
             switch (currentState)
             {
-                case GUIStates.T0blank:
+                case GUIStates.S0blank:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H0imgOpen:
-                            currentState = GUIStates.T1imgLoaded;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S1bmpLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H3usbOpen:
-                            currentState = GUIStates.T3usbConnected;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S7svgLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H8svgOpen:
-                            currentState = GUIStates.T7svgLoaded;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S3usbConnected;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T1imgLoaded:
+                case GUIStates.S1bmpLoaded:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H1imgSlice:
-                            currentState = GUIStates.T2imgSliced;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S1bmpLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T0blank;
+                        case GUIActions.A1bmpSlice:
+                            currentState = GUIStates.S2bmpSliced;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H3usbOpen:
-                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S0blank;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T2imgSliced:
+                case GUIStates.S2bmpSliced:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T0blank;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S1bmpLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H3usbOpen:
-                            currentState = GUIStates.T5imgSlicedUsbConnected;
+                        case GUIActions.A1bmpSlice:
+                            currentState = GUIStates.S2bmpSliced;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S0blank;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S5bmpSlicedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T3usbConnected:
+                case GUIStates.S3usbConnected:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H0imgOpen:
-                            currentState = GUIStates.T4imgLoadedUsbConnected;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H4usbClose:
-                            currentState = GUIStates.T0blank;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S3usbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H8svgOpen:
-                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A6usbClose:
+                            currentState = GUIStates.S0blank;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T4imgLoadedUsbConnected:
+                case GUIStates.S4bmpLoadedUsbConnected:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H1imgSlice:
-                            currentState = GUIStates.T5imgSlicedUsbConnected;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T3usbConnected;
+                        case GUIActions.A1bmpSlice:
+                            currentState = GUIStates.S5bmpSlicedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H4usbClose:
-                            currentState = GUIStates.T1imgLoaded;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A6usbClose:
+                            currentState = GUIStates.S1bmpLoaded;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T5imgSlicedUsbConnected:
+                case GUIStates.S5bmpSlicedUsbConnected:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T3usbConnected;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H4usbClose:
-                            currentState = GUIStates.T1imgLoaded;
+                        case GUIActions.A1bmpSlice:
+                            currentState = GUIStates.S5bmpSlicedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H5startDrawing:
-                            currentState = GUIStates.T6drawing;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S3usbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A5startDrawing:
+                            currentState = GUIStates.S6bmpDrawing;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A6usbClose:
+                            currentState = GUIStates.S2bmpSliced;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T6drawing:
+                case GUIStates.S6bmpDrawing:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H2imgClear:
-                            break;
-                        case GUITransitions.H4usbClose:
-                            break;
-                        case GUITransitions.H5startDrawing:
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.T7svgLoaded:
-                    switch (currentTransition)
-                    {
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T0blank;
-                            updateGUIelements();
-                            break;
-                        case GUITransitions.H3usbOpen:
-                            currentState = GUIStates.T8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUITransitions.H7svgMove:
-                            currentState = GUIStates.T7svgLoaded;
-                            updateGUIelements();
-                            //svgPlot.GenerateGCODE();
-                            //svgPlot.GeneratePreviewPoints();
-                            //loadSVGPreviewPoints();
-                            break;
-                        case GUITransitions.H8svgOpen:
-                            currentState = GUIStates.T7svgLoaded;
+                        case GUIActions.A5startDrawing:
+                            currentState = GUIStates.S5bmpSlicedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T8svgLoadedUsbConnected:
+                case GUIStates.S7svgLoaded:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T0blank;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S1bmpLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H4usbClose:
-                            currentState = GUIStates.T7svgLoaded;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S0blank;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H5startDrawing:
-                            currentState = GUIStates.T9svgDrawing;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S7svgLoaded;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H7svgMove:
-                            currentState = GUIStates.T8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            //svgPlottr.generateGcode
-                            //svgPlottr.previewv
-                            //svgPlot.GenerateGCODE();
-                            //svgPlot.GeneratePreviewPoints();
-                            //loadSVGPreviewPoints();
-                            break;
-                        case GUITransitions.H8svgOpen:
-                            currentState = GUIStates.T8svgLoadedUsbConnected;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
                             break;
                     }
                     break;
-                case GUIStates.T9svgDrawing:
+                case GUIStates.S8svgLoadedUsbConnected:
                     switch (currentTransition)
                     {
-                        case GUITransitions.H2imgClear:
-                            currentState = GUIStates.T0blank;
+                        case GUIActions.A0bmpOpen:
+                            currentState = GUIStates.S4bmpLoadedUsbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H4usbClose:
-                            currentState = GUIStates.T7svgLoaded;
+                        case GUIActions.A2clear:
+                            currentState = GUIStates.S3usbConnected;
                             updateGUIelements();
                             break;
-                        case GUITransitions.H5startDrawing:
-                            currentState = GUIStates.T9svgDrawing;
+                        case GUIActions.A3svgOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A4usbOpen:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A5startDrawing:
+                            currentState = GUIStates.S9svgDrawing;
+                            updateGUIelements();
+                            break;
+                        case GUIActions.A6usbClose:
+                            currentState = GUIStates.S7svgLoaded;
+                            updateGUIelements();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case GUIStates.S9svgDrawing:
+                    switch (currentTransition)
+                    {
+                        case GUIActions.A5startDrawing:
+                            currentState = GUIStates.S8svgLoadedUsbConnected;
                             updateGUIelements();
                             break;
                         default:
@@ -438,33 +496,38 @@ namespace plottrBot
                 default:
                     break;
             }
-
         }
+
+        //canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+        //canvasPreview.Background = System.Windows.Media.Brushes.White;
 
         private void btnSelectImg_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                //currentTransition = GUITransitions.H0imgOpen;
+                //handleGUIstates();
+
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
                 //bool result = (bool)openFileDialog.ShowDialog();
                 if ((bool)openFileDialog.ShowDialog())
                 {
-                    btnClearImg_Click(sender, e);     //removes previous images/elements from the canvas
+                    clearEverything();     //removes previous images/elements from the canvas
                     
-
                     if (openFileDialog.FileName.EndsWith(".bmp"))      //loaded .bmp image
                     {
+                        loadedImgType = imgType.bmp;
+                        currentTransition = GUIActions.A0bmpOpen;
+                        handleGUIstates();
+
                         myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
-                        
+
+                        //currentTransition = GUITransitions.H0imgOpen;
+                        //handleGUIstates();
+
                         Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
                         Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
-
-                        //enables buttons that need the image to work
-                        //enabledUIElements("img enable");
-                        currentTransition = GUITransitions.H0imgOpen;
-                        handleGUIstates();
                     }
                     else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
                     {
@@ -472,59 +535,23 @@ namespace plottrBot
                         //c# will then send these components as gcode to the robot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
+                        loadedImgType = imgType.svg;
+                        currentTransition = GUIActions.A3svgOpen;
+                        handleGUIstates();
+
                         svgPlot = new SVGPlottr(openFileDialog.FileName);
-
-                        //Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
-                        //Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
-
-                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
-
-
-
-                        //svgPlot.GenerateGCODE();
                         svgPlot.GeneratePreviewPoints();
 
-                        //Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                        //Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
-                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
-
-                        //loadSVGPreviewPoints();
-
-                        //svgPlot.GenerateGCODE();
-                        //svgPlot.GeneratePreviewPoints();
-                        //loadSVGPreviewPoints();
-                        //foreach (string gcode in svgPlot.GeneratedGCODE)
-                        //{
-                        //    txtOut.Text += gcode;
-                        //}
-
-                        //double currentPicWidth;
-                        //double currentPicHeight;
-                        //if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
-                        //{
-                        //    currentPicWidth = svgPlot.GetImgWidth;
-                        //    currentPicHeight = svgPlot.GetImgHeight;
-                        //}
-                        //else
-                        //{
-                        //    currentPicWidth = myPlot.GetImgWidth;
-                        //    currentPicHeight = myPlot.GetImgHeight;
-                        //}
-                        currentTransition = GUITransitions.H8svgOpen;
-                        handleGUIstates();
+                        //currentTransition = GUITransitions.H8svgOpen;
+                        //handleGUIstates();
 
                         Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
                         Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
-                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
-                        //btnCenterImg.Content = "Move top left";
-
-                        
-
-                        //txtOut.Text += svgPlot.GetImgWidth + "\n";
-                        //txtOut.Text += svgPlot.GetImgHeight;
                     }
                     else
                         throw new Exception("Not supported file type");
+
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
                 }
             }
             catch (Exception ex)
@@ -595,8 +622,10 @@ namespace plottrBot
             //    enabledUIElements("both enable");
             //btnBoundingBox.IsEnabled = true;
 
-            currentTransition = GUITransitions.H1imgSlice;
+            currentTransition = GUIActions.A1bmpSlice;
             handleGUIstates();
+            //currentTransition = GUITransitions.H1imgSlice;
+            //handleGUIstates();
 
             //SystemSounds.Exclamation.Play();
         }
@@ -605,10 +634,12 @@ namespace plottrBot
         {
             try
             {
-                if (currentState == GUIStates.T5imgSlicedUsbConnected)
+                if (loadedImgType == imgType.bmp)
                 {
-                    currentTransition = GUITransitions.H5startDrawing;
+                    currentTransition = GUIActions.A5startDrawing;
                     handleGUIstates();
+                    //currentTransition = GUITransitions.H5startDrawing;
+                    //handleGUIstates();
                     bool timedOut = await sendSerialStringAsync("M220 S150\n");
                     txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
                     //countCmdSent = 0 is set when an image is sliced
@@ -633,7 +664,22 @@ namespace plottrBot
                     }
                     txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
                 }
-                else if(currentState == GUIStates.T8svgLoadedUsbConnected)
+                else if(loadedImgType == imgType.svg)
+                {
+                    //currentTransition = GUIActions.A5startDrawing;
+                    //handleGUIstates();
+
+                    bool timedOut = await sendSerialStringAsync("M220 S50\n");
+                    countCmdSent = 0;
+                    //if pause
+                    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                    {
+                        txtOut.Text += "Timed out\n";
+                        //break;      //exits the for loop
+                    }
+                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+                }
+                else if(currentState == GUIStates.S8svgLoadedUsbConnected)
                 {
                     bool timedOut = await sendSerialStringAsync("M220 S50\n");
                     countCmdSent = 0;
@@ -641,8 +687,10 @@ namespace plottrBot
                     for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
                     {
                         txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, svgPlot.GeneratedGCODE.Count);
-                        currentTransition = GUITransitions.H5startDrawing;
+                        currentTransition = GUIActions.A5startDrawing;
                         handleGUIstates();
+                        //currentTransition = GUITransitions.H5startDrawing;
+                        //handleGUIstates();
                         if (btnPauseDrawing.Content.ToString().Contains("Continue"))
                             break;
 
@@ -760,8 +808,10 @@ namespace plottrBot
                 {
                     port.Close();
                     btnConnect.Content = "Connect USB";
-                    currentTransition = GUITransitions.H4usbClose;
+                    currentTransition = GUIActions.A6usbClose;
                     handleGUIstates();
+                    //currentTransition = GUITransitions.H4usbClose;
+                    //handleGUIstates();
                 }
                 else
                 {
@@ -772,8 +822,10 @@ namespace plottrBot
                     port.StopBits = StopBits.One;
                     port.Open();
                     btnConnect.Content = "Disconnect";
-                    currentTransition = GUITransitions.H3usbOpen;
+                    currentTransition = GUIActions.A4usbOpen;
                     handleGUIstates();
+                    //currentTransition = GUITransitions.H3usbOpen;     
+                    //handleGUIstates();
                 }
             }
             catch (Exception ex)
@@ -799,7 +851,7 @@ namespace plottrBot
             {
                 double currentPicWidth;
                 double currentPicHeight;
-                if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+                if (loadedImgType == imgType.svg)
                 {
                     currentPicWidth = svgPlot.GetImgWidth;
                     currentPicHeight = svgPlot.GetImgHeight;
@@ -831,7 +883,7 @@ namespace plottrBot
             Plottr.ImgMoveX = (int)x;
             Plottr.ImgMoveY = (int)y;
 
-            if (currentState == GUIStates.T7svgLoaded || currentState == GUIStates.T8svgLoadedUsbConnected)
+            if (loadedImgType == imgType.svg)
             {
                 svgPlot.GenerateGCODE();
                 svgPlot.GeneratePreviewPoints();
@@ -938,6 +990,15 @@ namespace plottrBot
 
 
         private void btnClearImg_Click(object sender, RoutedEventArgs e)
+        {
+            clearEverything();
+            currentTransition = GUIActions.A2clear;
+            handleGUIstates();
+            //currentTransition = GUITransitions.H2imgClear;
+            //handleGUIstates();
+        } 
+
+        private void clearEverything()
         {
             myPlot = null;
             svgPlot = null;
@@ -1104,5 +1165,42 @@ namespace plottrBot
             Properties.Settings.Default.Save();
             MessageBox.Show("Please restart the program for the changes to take effect.", "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
-    }//main window
-}
+
+        private bool sendSerialString(string message)       //not used anymore
+        {
+            try
+            {
+                bool timedOut = false;
+                if (port.IsOpen)
+                {
+                    port.Write(message);       //sends the current command over usb
+
+                    //wait for GO from arduino
+                    double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
+
+                    string incoming = "";
+                    while (!incoming.Contains("GO"))
+                    {
+                        if (port.BytesToRead > 0)
+                            incoming = port.ReadLine();     //reads the reply from arduino
+                        if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
+                        {
+                            timedOut = true;        //flag timeout event
+                            //txtOut.Text += "Timed out";
+                            throw new Exception("Timed out. Recheck USB connection.");
+                        }
+                    }
+                }
+                else
+                    throw new Exception("Connect USB COM port");
+                return timedOut;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return true;
+            }
+        }
+        }//main window
+    }
+

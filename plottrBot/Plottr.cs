@@ -517,7 +517,7 @@ namespace plottrBot
             int numberOfPointsForCmd = 0;
 
             double totalOffsetWidth = ImgMoveX - bmpDimensionOffsetWidth;
-            double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight;
+            double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight; // + 2;     //temporary correction for misalignment between bmp and svg
 
             switch (cmd)
             {
