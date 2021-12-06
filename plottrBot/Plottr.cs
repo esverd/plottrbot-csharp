@@ -188,20 +188,38 @@ namespace plottrBot
                     int endY = y;
                     if (lineStarted)
                     {
+                        double calibrateOffset = 0.5;
+                        double calibrateStretch = (370 / 367.0);
+                        double totalX0;
+                        double totalY0;
+                        double totalX1;
+                        double totalY1;
+
                         if (goingDown && (!pixelArray[x, y + 1] || y >= pxArrayHeight - 2))     //next downward pixel is white OR current array location is beyond pixel height
                         {
                             if (pixelArray[x, y + 1])    //check the very last pixel as well
                                 endY = y + 1;
                             lineStarted = false;        //start a new line
-                            BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
+                            totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
+                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;// + calibrateOffset;
+                            totalX1 = (x * ratioWidthToPx) + ImgMoveX;
+                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
+                            BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
                         if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
                         {
                             if (pixelArray[x, y - 1])    //check the very last pixel as well
                                 endY = y - 1;       //endY = y + 1;
                             lineStarted = false;
-                            BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
+                            totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
+                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            totalX1 = (x * ratioWidthToPx) + ImgMoveX;
+                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
+                            BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
+                        
                     }
                 }
                 goingDown = !goingDown;
