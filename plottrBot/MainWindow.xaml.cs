@@ -722,42 +722,42 @@ namespace plottrBot
                 btnSend_Click(sender, e);
         }
 
-        private bool sendSerialString(string message)       //not used anymore
-        {
-            try
-            {
-                bool timedOut = false;
-                if (port.IsOpen)
-                {
-                    port.Write(message);       //sends the current command over usb
+        //private bool sendSerialString(string message)       //not used anymore
+        //{
+        //    try
+        //    {
+        //        bool timedOut = false;
+        //        if (port.IsOpen)
+        //        {
+        //            port.Write(message);       //sends the current command over usb
 
-                    //wait for GO from arduino
-                    double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
+        //            //wait for GO from arduino
+        //            double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
 
-                    string incoming = "";
-                    while (!incoming.Contains("GO"))
-                    {
-                        if(port.BytesToRead > 0)
-                            incoming = port.ReadLine();     //reads the reply from arduino
-                        if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
-                        {
-                            timedOut = true;        //flag timeout event
-                            //txtOut.Text += "Timed out";
-                            throw new Exception("Timed out. Recheck USB connection.");
-                        }
-                    }
-                }
-                else
-                    throw new Exception("Connect USB COM port");
-                return timedOut;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return true;
-            }
+        //            string incoming = "";
+        //            while (!incoming.Contains("GO"))
+        //            {
+        //                if(port.BytesToRead > 0)
+        //                    incoming = port.ReadLine();     //reads the reply from arduino
+        //                if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
+        //                {
+        //                    timedOut = true;        //flag timeout event
+        //                    //txtOut.Text += "Timed out";
+        //                    throw new Exception("Timed out. Recheck USB connection.");
+        //                }
+        //            }
+        //        }
+        //        else
+        //            throw new Exception("Connect USB COM port");
+        //        return timedOut;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+        //        return true;
+        //    }
 
-        }
+        //}
 
         private async Task<bool> sendSerialStringAsync(string message)
         {
@@ -1004,8 +1004,8 @@ namespace plottrBot
             svgPlot = null;
             canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
             canvasPreview.Background = System.Windows.Media.Brushes.White;
-            currentTransition = GUITransitions.H2imgClear;
-            handleGUIstates();
+            //currentTransition = GUITransitions.H2imgClear;
+            //handleGUIstates();
         }
 
         private void btnSliderIncDec(object sender, RoutedEventArgs e)      //increases or decreases the slider by one based on button press
@@ -1166,41 +1166,41 @@ namespace plottrBot
             MessageBox.Show("Please restart the program for the changes to take effect.", "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
 
-        private bool sendSerialString(string message)       //not used anymore
-        {
-            try
-            {
-                bool timedOut = false;
-                if (port.IsOpen)
-                {
-                    port.Write(message);       //sends the current command over usb
+        //private bool sendSerialString(string message)       //not used anymore
+        //{
+        //    try
+        //    {
+        //        bool timedOut = false;
+        //        if (port.IsOpen)
+        //        {
+        //            port.Write(message);       //sends the current command over usb
 
-                    //wait for GO from arduino
-                    double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
+        //            //wait for GO from arduino
+        //            double WaitTimeout = (20 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
 
-                    string incoming = "";
-                    while (!incoming.Contains("GO"))
-                    {
-                        if (port.BytesToRead > 0)
-                            incoming = port.ReadLine();     //reads the reply from arduino
-                        if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
-                        {
-                            timedOut = true;        //flag timeout event
-                            //txtOut.Text += "Timed out";
-                            throw new Exception("Timed out. Recheck USB connection.");
-                        }
-                    }
-                }
-                else
-                    throw new Exception("Connect USB COM port");
-                return timedOut;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return true;
-            }
-        }
+        //            string incoming = "";
+        //            while (!incoming.Contains("GO"))
+        //            {
+        //                if (port.BytesToRead > 0)
+        //                    incoming = port.ReadLine();     //reads the reply from arduino
+        //                if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
+        //                {
+        //                    timedOut = true;        //flag timeout event
+        //                    //txtOut.Text += "Timed out";
+        //                    throw new Exception("Timed out. Recheck USB connection.");
+        //                }
+        //            }
+        //        }
+        //        else
+        //            throw new Exception("Connect USB COM port");
+        //        return timedOut;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+        //        return true;
+        //    }
+        //}
         }//main window
     }
 
