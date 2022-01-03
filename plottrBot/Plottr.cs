@@ -188,8 +188,8 @@ namespace plottrBot
                     int endY = y;
                     if (lineStarted)
                     {
-                        double calibrateOffset = 0.5;
-                        double calibrateStretch = (370 / 367.0);
+                        double calibrateOffset = -23.0;
+                        double calibrateStretch = (68.5 / 65.5) * (69 / 67.9) * (68.5 / 67.6);
                         double totalX0;
                         double totalY0;
                         double totalX1;
@@ -201,10 +201,13 @@ namespace plottrBot
                                 endY = y + 1;
                             lineStarted = false;        //start a new line
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
-                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;// + calibrateOffset;
+                            //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
+                            totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
-                            //BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
+                            //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
+                            totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
                         if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
@@ -213,9 +216,13 @@ namespace plottrBot
                                 endY = y - 1;       //endY = y + 1;
                             lineStarted = false;
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
-                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
+                            totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
+                            totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
                             //BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
