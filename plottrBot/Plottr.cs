@@ -76,7 +76,7 @@ namespace plottrBot
             ImgMoveX = 0;
             ImgMoveY = 0;
             StartGCODE = "";
-            EndGCODE = "";
+            //EndGCODE = "";
         }
 
         private void imgToArray()
@@ -188,8 +188,8 @@ namespace plottrBot
                     int endY = y;
                     if (lineStarted)
                     {
-                        double calibrateOffset = -23.0;
-                        double calibrateStretch = (68.5 / 65.5) * (69 / 67.9) * (68.5 / 67.6);
+                        //double calibrateOffset = -0.5;
+                        //double calibrateStretch = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1);
                         double totalX0;
                         double totalY0;
                         double totalX1;
@@ -203,11 +203,13 @@ namespace plottrBot
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
                             //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
                             //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            //totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
                             //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
                             //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            //totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
                         if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
@@ -218,11 +220,13 @@ namespace plottrBot
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
                             //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
                             //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            //totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
                             //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
                             //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            //totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
+                            totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             //BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
@@ -231,6 +235,32 @@ namespace plottrBot
                 }
                 goingDown = !goingDown;
             } //for x
+        }
+
+        private double getYStretched(double inY)
+        {
+            //s(y) = a*y + b
+            double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9);
+            double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0);
+            double y0 = 280.0; //in mm
+            double y1 = 600.0;
+            double a = (sy1 - sy0) / (y1 - y0);
+            double b = ((sy0-(a*y0)) + (sy1-(a*y1))) / 2.0;
+            double stretchCoefficient = (inY * a) + b;
+            return inY * stretchCoefficient;
+            //double scaleCoefficient = (stretchVal1 - stretchVal0) / (stretchVal1atY - stretchVal0atY);
+            //return inY * (inY * Math.Abs(scaleCoefficient) + 1);
+        }
+
+        private double getYOffset(double inY)
+        {
+            double offsetVal0 = -3.5;
+            double offsetVal1 = -1.5;
+            double offsetVal0atY = 280.0; //in mm
+            double offsetVal1atY = 600.0;
+            double scaleCoefficient = (offsetVal1 - offsetVal0) / (offsetVal1atY - offsetVal0atY);
+            //return inY * scaleCoefficient;
+            return 0;
         }
 
 
@@ -271,7 +301,8 @@ namespace plottrBot
                 GeneratedGCODE.Add("G1 Z" + Convert.ToInt32(!line.Draw) + "\n");
                 GeneratedGCODE.Add(string.Format("G1 X{0:0.###} Y{1:0.###}\nL{2}", line.X1, line.Y1, AllLines.IndexOf(line)));      //added L to save the line number, makes gui stuff easier in main window
             }
-            GeneratedGCODE.Add(EndGCODE + "\n");
+            //GeneratedGCODE.Add(EndGCODE + "\n");
+            GeneratedGCODE.Add(EndGCODE);
         }
 
         public void ImgToCSV()
