@@ -240,27 +240,38 @@ namespace plottrBot
         private double getYStretched(double inY)
         {
             //s(y) = a*y + b
-            double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9);
-            double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0);
-            double y0 = 280.0; //in mm
+            double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (67.0 / 66) * (65 / 66.5);
+            double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0) * (65.0 / 66) * (65.0 / 66);
+            double y0 = 250.0; //in mm
             double y1 = 600.0;
             double a = (sy1 - sy0) / (y1 - y0);
             double b = ((sy0-(a*y0)) + (sy1-(a*y1))) / 2.0;
             double stretchCoefficient = (inY * a) + b;
-            return inY * stretchCoefficient;
+            return (inY * stretchCoefficient);
             //double scaleCoefficient = (stretchVal1 - stretchVal0) / (stretchVal1atY - stretchVal0atY);
             //return inY * (inY * Math.Abs(scaleCoefficient) + 1);
         }
 
         private double getYOffset(double inY)
         {
-            double offsetVal0 = -3.5;
-            double offsetVal1 = -1.5;
-            double offsetVal0atY = 280.0; //in mm
-            double offsetVal1atY = 600.0;
-            double scaleCoefficient = (offsetVal1 - offsetVal0) / (offsetVal1atY - offsetVal0atY);
-            //return inY * scaleCoefficient;
-            return 0;
+            //s(y) = a*y + b
+            double sy0 = -1.5;
+            double sy1 = -0.8;      //negative sign equals further down from the robot
+            double y0 = 250.0;      //in mm
+            double y1 = 600.0;
+            double a = (sy1 - sy0) / (y1 - y0);
+            double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
+            double offsetCoefficient = (inY * a) + b;
+            return offsetCoefficient;
+            //return 0;
+
+            //double offsetVal0 = -3.5;
+            //double offsetVal1 = -1.5;
+            //double offsetVal0atY = 280.0; //in mm
+            //double offsetVal1atY = 600.0;
+            //double scaleCoefficient = (offsetVal1 - offsetVal0) / (offsetVal1atY - offsetVal0atY);
+            ////return inY * scaleCoefficient;
+            //return 0;
         }
 
 
