@@ -201,15 +201,11 @@ namespace plottrBot
                                 endY = y + 1;
                             lineStarted = false;        //start a new line
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
-                            //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
-                            //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            //totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
-                            totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
+                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            //totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
-                            //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            //totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
-                            totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
+                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
                         if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
@@ -218,16 +214,11 @@ namespace plottrBot
                                 endY = y - 1;       //endY = y + 1;
                             lineStarted = false;
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
-                            //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
-                            //totalY0 = (y0 * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            //totalY0 = (((y0 * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
-                            totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
+                            totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                            //totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            //totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
-                            //totalY1 = (endY * ratioHeightToPx * calibrateStretch) + ImgMoveY + calibrateOffset;
-                            //totalY1 = (((endY * ratioHeightToPx) + ImgMoveY) * calibrateStretch) + calibrateOffset;
-                            totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
-                            //BlackLines.Add(new TraceLine((x0 * ratioWidthToPx) + ImgMoveX, (y0 * ratioHeightToPx) + ImgMoveY, (x * ratioWidthToPx) + ImgMoveX, (endY * ratioHeightToPx) + ImgMoveY));      //saves coordinates of last pixel in the line
+                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            //totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
                         
@@ -239,39 +230,33 @@ namespace plottrBot
 
         private double getYStretched(double inY)
         {
+            return inY;
+
             //s(y) = a*y + b
-            double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (67.0 / 66) * (65 / 66.5);
-            double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0) * (65.0 / 66) * (65.0 / 66);
-            double y0 = 250.0; //in mm
-            double y1 = 600.0;
-            double a = (sy1 - sy0) / (y1 - y0);
-            double b = ((sy0-(a*y0)) + (sy1-(a*y1))) / 2.0;
-            double stretchCoefficient = (inY * a) + b;
-            return (inY * stretchCoefficient);
+            //double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (67.0 / 66) * (65 / 66.5);
+            //double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0) * (65.0 / 66) * (65.0 / 66);
+            //double y0 = 250.0; //in mm
+            //double y1 = 600.0;
+            //double a = (sy1 - sy0) / (y1 - y0);
+            //double b = ((sy0-(a*y0)) + (sy1-(a*y1))) / 2.0;
+            //double stretchCoefficient = (inY * a) + b;
+            //return (inY * stretchCoefficient);
             //double scaleCoefficient = (stretchVal1 - stretchVal0) / (stretchVal1atY - stretchVal0atY);
-            //return inY * (inY * Math.Abs(scaleCoefficient) + 1);
         }
 
         private double getYOffset(double inY)
         {
-            //s(y) = a*y + b
-            double sy0 = -1.5;
-            double sy1 = -0.8;      //negative sign equals further down from the robot
-            double y0 = 250.0;      //in mm
-            double y1 = 600.0;
-            double a = (sy1 - sy0) / (y1 - y0);
-            double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
-            double offsetCoefficient = (inY * a) + b;
-            return offsetCoefficient;
-            //return 0;
+            return 0;
 
-            //double offsetVal0 = -3.5;
-            //double offsetVal1 = -1.5;
-            //double offsetVal0atY = 280.0; //in mm
-            //double offsetVal1atY = 600.0;
-            //double scaleCoefficient = (offsetVal1 - offsetVal0) / (offsetVal1atY - offsetVal0atY);
-            ////return inY * scaleCoefficient;
-            //return 0;
+            //s(y) = a*y + b
+            //double sy0 = -1.5;
+            //double sy1 = -0.8;      //negative sign equals further down from the robot
+            //double y0 = 250.0;      //in mm
+            //double y1 = 600.0;
+            //double a = (sy1 - sy0) / (y1 - y0);
+            //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
+            //double offsetCoefficient = (inY * a) + b;
+            //return offsetCoefficient;
         }
 
 
@@ -289,8 +274,15 @@ namespace plottrBot
 
             for (int i = 0; i < BlackLines.Count - 1; i++)
             {
-                AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
-                AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
+                double tempY0 = getYStretched(BlackLines[i].Y0) + getYOffset(BlackLines[i].Y0);
+                double tempY1 = getYStretched(BlackLines[i].Y1) + getYOffset(BlackLines[i].Y1);
+                AllLines.Add(new TraceLine(BlackLines[i].X0, tempY0, BlackLines[i].X1, tempY1, true));      //stores the current line to be drawn
+                
+                tempY0 = getYStretched(BlackLines[i + 1].Y0) + getYOffset(BlackLines[i + 1].Y0);
+                AllLines.Add(new TraceLine(BlackLines[i].X1, tempY1, BlackLines[i + 1].X0, tempY0, false));   //moves draw head to position for next line
+
+                //AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
+                //AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
 
                 //finding the minimum and maximum values for both X and Y positions. used to draw the bounding box in GUI
                 if (BlackLines[i].X0 < xMinVal || BlackLines[i].X1 < xMinVal)
@@ -302,7 +294,6 @@ namespace plottrBot
                 if (BlackLines[i].Y0 > yMaxVal || BlackLines[i].Y1 > yMaxVal)
                     yMaxVal = Math.Max(BlackLines[i].Y0, BlackLines[i].Y1);
             }
-
             BoundingCoordinates = new TraceLine(xMinVal, yMinVal, xMaxVal, yMaxVal);        //saves X and Y positions to draw bounding box later
 
             GeneratedGCODE.Add(StartGCODE + "\n");
@@ -585,6 +576,9 @@ namespace plottrBot
 
             double totalOffsetWidth = ImgMoveX - bmpDimensionOffsetWidth;
             double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight; // + 2;     //temporary correction for misalignment between bmp and svg
+            totalOffsetWidth = 0;
+            totalOffsetHeight = 0;
+
 
             switch (cmd)
             {
