@@ -59,8 +59,9 @@ namespace plottrBot
             txtRWidth.Text = Properties.Settings.Default.RobotWidth.ToString();
             txtRHeight.Text = Properties.Settings.Default.RobotHeight.ToString();
 
-            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
-            canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+            //scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            //canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+            calcCanvasPreviewScale();
 
             port = new SerialPort();        //creates a blank serial port to be specified later
 
@@ -654,6 +655,48 @@ namespace plottrBot
 
         }
 
+        private void btnZoomIn_Click(object sender, RoutedEventArgs e)
+        {
+            //zoomFactor increment
+            //redraw content in canvas
+            //fix scrollbars in canvas
+            //eventuelt bare endre størrelse på canvas??
+
+            //canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            //canvasPreview.Background = System.Windows.Media.Brushes.White;
+
+            canvasPreview.Width *= 1.1;
+            calcCanvasPreviewScale();
+            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+
+            //ADD keeps image in center
+
+
+            //scaleToPreview *= 1.5;
+            //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+
+
+            //TODO later: add zoom with mouse scroll wheel, and mouse click-to-drag
+
+            //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
+            //release also removes the image. gcode is relevant for last loaded image
+        }
+
+        private void btnZoomOut_Click(object sender, RoutedEventArgs e)
+        {
+            canvasPreview.Width /= 1.1;
+            calcCanvasPreviewScale();
+            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+        }
+
+        private void calcCanvasPreviewScale()
+        {
+            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+        }
+
+
+
         void initCanvasPreview()        //draws dark grey frame around preview canvas
         {
             //canvasPreview.Width = robotWidth;
@@ -1166,6 +1209,7 @@ namespace plottrBot
                     break;
             }
         }
+
 
     }//main window
     }
