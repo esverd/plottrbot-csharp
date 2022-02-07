@@ -662,37 +662,53 @@ namespace plottrBot
             //fix scrollbars in canvas
             //eventuelt bare endre størrelse på canvas??
 
-            //canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
-            //canvasPreview.Background = System.Windows.Media.Brushes.White;
 
-            canvasPreview.Width *= 1.1;
-            calcCanvasPreviewScale();
-            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
-
-            //ADD keeps image in center
-
-
-            //scaleToPreview *= 1.5;
-            //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+            calcCanvasPreviewScale(1.1);
 
 
             //TODO later: add zoom with mouse scroll wheel, and mouse click-to-drag
-
-            //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
-            //release also removes the image. gcode is relevant for last loaded image
         }
 
         private void btnZoomOut_Click(object sender, RoutedEventArgs e)
         {
-            canvasPreview.Width /= 1.1;
-            calcCanvasPreviewScale();
-            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+            //canvasPreview.Width /= 1.1;
+            //calcCanvasPreviewScale();
+            //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+            calcCanvasPreviewScale(1 / 1.1);
         }
 
         private void calcCanvasPreviewScale()
         {
-            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //(double)previewWidth / robotWidth;     //used to scale all actual sizes to be shown on screen
+            scaleToPreview = (double)canvasPreview.Width / (double)Plottr.RobotWidth;        //used to scale all actual sizes to be shown on screen
             canvasPreview.Height = Plottr.RobotHeight * scaleToPreview;
+
+            scrollViewerHoldingCanvasPreview.ScrollToHorizontalOffset(scrollViewerHoldingCanvasPreview.ScrollableWidth / 2.0);
+            scrollViewerHoldingCanvasPreview.ScrollToVerticalOffset(scrollViewerHoldingCanvasPreview.ScrollableHeight / 2.0);
+            scrollViewerHoldingCanvasPreview.UpdateLayout();
+        }
+
+        private void calcCanvasPreviewScale(double scale)
+        {
+
+            canvasPreview.Width *= scale;
+            calcCanvasPreviewScale();
+            placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+
+            scrollViewerHoldingCanvasPreview.ScrollToHorizontalOffset(scrollViewerHoldingCanvasPreview.ScrollableWidth / 2.0);
+            scrollViewerHoldingCanvasPreview.ScrollToVerticalOffset(scrollViewerHoldingCanvasPreview.ScrollableHeight / 2.0);
+            scrollViewerHoldingCanvasPreview.UpdateLayout();
+
+            //scrollViewerHoldingCanvasPreview.ScrollableHeight
+        }
+
+        private void btnHoldImg_Click(object sender, RoutedEventArgs e)
+        {
+            //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
+            //release also removes the image. gcode is relevant for last loaded image
+
+
+
+
         }
 
 
@@ -1210,7 +1226,7 @@ namespace plottrBot
             }
         }
 
-
+        
     }//main window
     }
 

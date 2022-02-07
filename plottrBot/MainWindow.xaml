@@ -8,7 +8,7 @@
         Title="Warhol Slicer" Height="983.604" Width="1637.44" Icon="scarJo-small.bmp">
     <Grid Margin="8,0,-8,10">
         <Border x:Name="borderPreview" BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="862" Margin="379,47,0,0" VerticalAlignment="Top" Width="1202"/>
-        <ScrollViewer HorizontalAlignment="Left" Height="860" Margin="380,48,0,0" VerticalAlignment="Top" Width="1200" BorderBrush="Black" BorderThickness="1" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+        <ScrollViewer x:Name="scrollViewerHoldingCanvasPreview" HorizontalAlignment="Left" Height="860" Margin="380,48,0,0" VerticalAlignment="Top" Width="1200" BorderBrush="Black" BorderThickness="1" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
             <Canvas x:Name="canvasPreview" HorizontalAlignment="Left" Height="800" Margin="0,0,0,0" VerticalAlignment="Top" Width="1200" RenderTransformOrigin="0.481,0.251"/>
         </ScrollViewer>
 
