@@ -228,8 +228,7 @@ namespace plottrBot
 
         private double getYStretched(double inY)
         {
-            return inY;
-
+            //used when calibrating in calcMovementUpDown:
             //s(y) = a*y + b
             //double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (67.0 / 66) * (65 / 66.5);
             //double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0) * (65.0 / 66) * (65.0 / 66);
@@ -240,12 +239,24 @@ namespace plottrBot
             //double stretchCoefficient = (inY * a) + b;
             //return (inY * stretchCoefficient);
             //double scaleCoefficient = (stretchVal1 - stretchVal0) / (stretchVal1atY - stretchVal0atY);
+
+
+            //used when calibrating in GenerateGCODE:
+            //double sy0 = (65 / 62.2);       //at y=250
+            //double sy1 = (65 / 64.7) * (65 / 64.3);       //at y=590
+            //double y0 = 250.0; //in mm
+            //double y1 = 590.0;
+            //double a = (sy1 - sy0) / (y1 - y0);
+            //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
+            //double stretchCoefficient = (inY * a) + b;
+            //return (inY * stretchCoefficient);
+            return inY;
+
         }
 
         private double getYOffset(double inY)
         {
-            return 0;
-
+            //used when calibrating in calcMovementUpDown:
             //s(y) = a*y + b
             //double sy0 = -1.5;
             //double sy1 = -0.8;      //negative sign equals further down from the robot
@@ -255,6 +266,18 @@ namespace plottrBot
             //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
             //double offsetCoefficient = (inY * a) + b;
             //return offsetCoefficient;
+
+
+            //used when calibrating in GenerateGCODE:
+            //double sy0 = -14.0;
+            //double sy1 = -9.0;
+            //double y0 = 250.0;      //in mm
+            //double y1 = 590.0;
+            //double a = (sy1 - sy0) / (y1 - y0);
+            //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
+            //double offsetCoefficient = (inY * a) + b;
+            //return offsetCoefficient;
+            return 0;
         }
 
 
