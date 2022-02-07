@@ -188,8 +188,6 @@ namespace plottrBot
                     int endY = y;
                     if (lineStarted)
                     {
-                        //double calibrateOffset = -0.5;
-                        //double calibrateStretch = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1);
                         double totalX0;
                         double totalY0;
                         double totalX1;
@@ -574,10 +572,8 @@ namespace plottrBot
             string returnString = "";
             int numberOfPointsForCmd = 0;
 
-            double totalOffsetWidth = ImgMoveX - bmpDimensionOffsetWidth;
-            double totalOffsetHeight = ImgMoveY - bmpDimensionOffsetHeight; // + 2;     //temporary correction for misalignment between bmp and svg
-            totalOffsetWidth = 0;
-            totalOffsetHeight = 0;
+            double totalOffsetWidth = ImgMoveX;     // - bmpDimensionOffsetWidth;
+            double totalOffsetHeight = ImgMoveY;    // - bmpDimensionOffsetHeight; // + 2;     //temporary correction for misalignment between bmp and svg
 
 
             switch (cmd)
