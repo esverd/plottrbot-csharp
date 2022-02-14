@@ -111,10 +111,11 @@ namespace plottrBot
                         }
                         else
                         {
-                            redrawRetentionImage();
+                            Plottr.ImgMoveX = retentionImage.ImgMoveX;
+                            Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
 
-                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
+                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
 
                     }
                     else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
@@ -140,17 +141,17 @@ namespace plottrBot
                         }
                         else
                         {
-                            redrawRetentionImage();
+                            Plottr.ImgMoveX = retentionImage.ImgMoveX;
+                            Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
 
-
-                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, svgPlot, false);
+                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, svgPlot, false);
                     }
                     else
                         throw new Exception("Not supported file type");
 
                     //MessageBox.Show(Plottr.ImgMoveX.ToString(), "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                    //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, false);     //places the image in the center of preview canvas
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
 
                 }
             }
@@ -161,29 +162,10 @@ namespace plottrBot
             }
         }
 
-        private void redrawRetentionImage()
-        {
-            //properties: fileName, retentionX, retentionY, ifSliced, fileType
-            //Plottr.ImgMoveX = globalX;
-            Plottr.ImgMoveX = retentionImage.ImgMoveX;
-            Plottr.ImgMoveY = retentionImage.ImgMoveY;
-
-            if(retentionImage.FileName.EndsWith(".bmp"))
-            {
-
-            }
-            else if (retentionImage.FileName.EndsWith(".svg"))
-            {
-
-            }
-
-        }
-
         private void btnHoldImg_Click(object sender, RoutedEventArgs e)
         {
             //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
             //release also removes the image. gcode is relevant for last loaded image
-
 
             if (btnHoldImg.Content.ToString().Contains("Hold"))
             {
@@ -197,9 +179,14 @@ namespace plottrBot
             else if (btnHoldImg.Content.ToString().Contains("Release"))
             {
                 retentionImage = null;
+                canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+                canvasPreview.Background = System.Windows.Media.Brushes.White;
+                if(Plottr.Filename.EndsWith(".bmp"))
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
+                else if (Plottr.Filename.EndsWith(".svg"))
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
                 btnHoldImg.Content = "Hold image";
             }
-
 
         }
 
@@ -458,10 +445,11 @@ namespace plottrBot
         {
             try
             {
-                if(Plottr.Filename.EndsWith(".svg"))
-                    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), svgPlot, false);
-                else if (Plottr.Filename.EndsWith(".bmp"))
-                    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), myPlot, false);
+                placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text));
+                //if(Plottr.Filename.EndsWith(".svg"))
+                //    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), svgPlot, false);
+                //else if (Plottr.Filename.EndsWith(".bmp"))
+                //    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), myPlot, false);
             }
             catch (Exception ex)
             {
@@ -503,7 +491,10 @@ namespace plottrBot
 
         void placeImageAt(int x, int y)
         {
-
+            if (Plottr.Filename.EndsWith(".bmp"))
+                placeImageAt(x, y, myPlot, false);
+            else if (Plottr.Filename.EndsWith(".svg"))
+                placeImageAt(x, y, svgPlot, false);
         }
 
         void placeImageAt(int x, int y, Object o, bool isRetentionImg)
@@ -533,20 +524,13 @@ namespace plottrBot
                 txtMoveY.Text = Plottr.ImgMoveY.ToString();
 
                 if(retentionImage != null)
-                {
                     placeImageAt(x, y, retentionImage, true);
-                }
             }
             else
             {
                 
                 if (retentionImage.FileName.EndsWith(".bmp"))
                 {
-                    //create new object
-                    //recursively call this function, with argument true
-                    //PlottrBMP o2 = new PlottrBMP(retentionImage.FileName);
-                    //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, o2, true);
-
                     PlottrBMP bmp2 = new PlottrBMP(retentionImage.FileName);
                     previewBMP(bmp2, x, y);
                 }
@@ -790,7 +774,7 @@ namespace plottrBot
             //fix scrollbars in canvas
             //eventuelt bare endre størrelse på canvas??
 
-            calcCanvasPreviewScale(1.1);
+            calcCanvasPreviewScale(1.2);
 
             //TODO later: add zoom with mouse scroll wheel, and mouse click-to-drag
         }
@@ -800,7 +784,7 @@ namespace plottrBot
             //canvasPreview.Width /= 1.1;
             //calcCanvasPreviewScale();
             //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
-            calcCanvasPreviewScale(1 / 1.1);
+            calcCanvasPreviewScale(1 / 1.2);
         }
 
         private void calcCanvasPreviewScale()
