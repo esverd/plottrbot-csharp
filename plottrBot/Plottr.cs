@@ -38,12 +38,28 @@ namespace plottrBot
                 else imgMoveY = value;
             }
         }
+        static public string Filename { get; set; }
+
+        //static public int ImgMoveX2 { get; set; }
+        //static public int ImgMoveY2 { get; set; }
 
         //public void GenerateGCODE()
         //{
 
         //}
 
+    }
+
+    class RetentionImg : Plottr
+    {
+        public int ImgMoveX { get; set; }
+        public int ImgMoveY { get; set; }
+        public string FileName { get; set; }
+
+        public RetentionImg()
+        {
+
+        }
     }
 
     class PlottrBMP : Plottr
@@ -65,11 +81,16 @@ namespace plottrBot
         private int pxArrayHeight { get; set; }
         
         static public bool TimedOut { get; set; }
-        
+        public string Filename { get; set; }
+
+        public int ImgMoveX2 { get; set; }
+        public int ImgMoveY2 { get; set; }
+
         public PlottrBMP(string filename)
         {
-            Img = new BitmapImage(new Uri(filename, UriKind.Absolute));
-            TempImg = new Bitmap(filename);
+            Filename = filename;
+            Img = new BitmapImage(new Uri(Filename, UriKind.Absolute));
+            TempImg = new Bitmap(Filename);
             BlackLines = new List<TraceLine>();
             AllLines = new List<TraceLine>();
             GeneratedGCODE = new List<string>();
@@ -377,7 +398,7 @@ namespace plottrBot
     {
         public char Command { get; set; }
         public double[] PointValues { get; set; }
-        public string Filepath { get; set; }
+        public string Filename { get; set; }
         public List<string> PathList { get; set; }
         private double relativeToAbsX { get; set; }
         private double relativeToAbsY { get; set; }
@@ -394,9 +415,9 @@ namespace plottrBot
         //public SVGPlottr()      //for debugging remove when svg works
         //{
         //}
-        public SVGPlottr(string filepath)
+        public SVGPlottr(string filename)
         {
-            Filepath = filepath;
+            Filename = filename;
             relativeToAbsX = 0;
             relativeToAbsY = 0;
             
@@ -405,12 +426,13 @@ namespace plottrBot
             PreviewPoints = new List<PointF>();
             getAllPaths();
             GenerateGCODE();
+            GeneratePreviewPoints();
         }
 
         //public string outPathString { get; set; }
         private void getAllPaths()
         {
-            using (StreamReader innFil = new StreamReader(Filepath))
+            using (StreamReader innFil = new StreamReader(Filename))
             {
                 while (!innFil.EndOfStream)     //reads a line in txt document until end of file is reached
                 {

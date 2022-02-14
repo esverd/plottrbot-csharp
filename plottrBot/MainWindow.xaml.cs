@@ -32,6 +32,7 @@ namespace plottrBot
     {
         PlottrBMP myPlot;          //the object from the custom Plottr class
         SVGPlottr svgPlot;
+        RetentionImg retentionImage;
         string[] comArray;      //array for names of available COM ports
         SerialPort port;        //USB COM port object
         double scaleToPreview;
@@ -44,9 +45,10 @@ namespace plottrBot
 
         GUIStates currentState;
         GUIActions currentTransition;
-        enum imgType { bmp, svg };
-        imgType loadedImgType;
+        //enum imgType { bmp, svg };
+        //imgType loadedImgType;
 
+        int globalX = 10;
 
         public MainWindow()
         {
@@ -75,6 +77,8 @@ namespace plottrBot
             Plottr.StartGCODE = "G1 Z1\n";
             Plottr.EndGCODE = txtEndGcode.Text + "\n";
 
+
+            retentionImage = null;
         }
 
         
@@ -86,9 +90,6 @@ namespace plottrBot
         {
             try
             {
-                //currentTransition = GUITransitions.H0imgOpen;
-                //handleGUIstates();
-
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
                 //bool result = (bool)openFileDialog.ShowDialog();
@@ -98,17 +99,25 @@ namespace plottrBot
                     
                     if (openFileDialog.FileName.EndsWith(".bmp"))      //loaded .bmp image
                     {
-                        loadedImgType = imgType.bmp;
+                        //loadedImgType = imgType.bmp;
                         currentTransition = GUIActions.A0bmpOpen;
                         handleGUIstates();
 
-                        myPlot = new PlottrBMP(openFileDialog.FileName);      //creates a plottr object with the selected image
+                        Plottr.Filename = openFileDialog.FileName;
+                        myPlot = new PlottrBMP(Plottr.Filename);      //creates a plottr object with the selected image
 
-                        //currentTransition = GUITransitions.H0imgOpen;
-                        //handleGUIstates();
-
-                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
-                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        if (retentionImage == null)
+                        {
+                            Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
+                            Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - myPlot.GetImgHeight) / 2);
+                        }
+                        else
+                        {
+                            Plottr.ImgMoveX = retentionImage.ImgMoveX;
+                            Plottr.ImgMoveY = retentionImage.ImgMoveY;
+                            redrawRetentionImage();
+                        }
+                        
                     }
                     else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
                     {
@@ -116,23 +125,35 @@ namespace plottrBot
                         //c# will then send these components as gcode to the robot
                         //the robot will then read and handle the gcode calling on the necessary type ov movement function
 
-                        loadedImgType = imgType.svg;
+                        //loadedImgType = imgType.svg;
                         currentTransition = GUIActions.A3svgOpen;
                         handleGUIstates();
 
-                        svgPlot = new SVGPlottr(openFileDialog.FileName);
-                        svgPlot.GeneratePreviewPoints();
+                        Plottr.Filename = openFileDialog.FileName;
+                        svgPlot = new SVGPlottr(Plottr.Filename);
+                        //svgPlot.GeneratePreviewPoints();
 
                         //currentTransition = GUITransitions.H8svgOpen;
                         //handleGUIstates();
+                        if (retentionImage == null)
+                        {
+                            Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
+                            Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
+                        }
+                        else
+                        {
+                            Plottr.ImgMoveX = retentionImage.ImgMoveX;
+                            Plottr.ImgMoveY = retentionImage.ImgMoveY;
+                            redrawRetentionImage();
+                        }
 
-                        Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
-                        Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - svgPlot.GetImgHeight) / 2);
                     }
                     else
                         throw new Exception("Not supported file type");
 
+                    MessageBox.Show(Plottr.ImgMoveX.ToString(), "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                     placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
+
                 }
             }
             catch (Exception ex)
@@ -140,6 +161,67 @@ namespace plottrBot
                 string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
                 MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
+        }
+
+        private void redrawRetentionImage()
+        {
+            //properties: fileName, retentionX, retentionY, ifSliced, fileType
+            //Plottr.ImgMoveX = globalX;
+        }
+
+        private void btnHoldImg_Click(object sender, RoutedEventArgs e)
+        {
+            //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
+            //release also removes the image. gcode is relevant for last loaded image
+
+
+            if (btnHoldImg.Content.ToString().Contains("Hold"))
+            {
+                retentionImage = new RetentionImg();
+                retentionImage.FileName = Plottr.Filename;
+                retentionImage.ImgMoveX = Plottr.ImgMoveX;
+                retentionImage.ImgMoveY = Plottr.ImgMoveY;
+                //create retenion image object
+                //if (Plottr.Filename.EndsWith(".svg"))
+                //{
+                //    retentionImage = new SVGPlottr(Plottr.Filename);
+                //}
+                //else if (Plottr.Filename.EndsWith(".bmp"))
+                //{
+                //    retentionImage = new PlottrBMP(Plottr.Filename);
+                //    //(PlottrBMP)retentionImage.ImgMoveX2 = Plottr.ImgMoveX;
+
+                //    //Plottr.ImgMoveX = Convert.ToInt32(txtMoveX.Text);
+                //    //Plottr.ImgMoveY = Convert.ToInt32(txtMoveY.Text);
+                //}
+
+                //double currentPicWidth;
+                //double currentPicHeight;
+                //if (loadedImgType == imgType.svg)
+                //{
+                //    currentPicWidth = svgPlot.GetImgWidth;
+                //    currentPicHeight = svgPlot.GetImgHeight;
+                //}
+                //else
+                //{
+                //    currentPicWidth = myPlot.GetImgWidth;
+                //    currentPicHeight = myPlot.GetImgHeight;
+                //}
+                //Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - currentPicWidth) / 2);
+                //Plottr.ImgMoveY = Convert.ToInt32((Plottr.RobotHeight - currentPicHeight) / 2);
+                //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+                btnHoldImg.Content = "Release first image";
+            }
+            else if (btnHoldImg.Content.ToString().Contains("Release"))
+            {
+                //Plottr.ImgMoveX = 0;
+                //Plottr.ImgMoveY = 0;
+                //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);
+                retentionImage = null;
+                btnHoldImg.Content = "Hold image";
+            }
+
+
         }
 
         //private void loadSVGPreviewPoints()
@@ -215,7 +297,7 @@ namespace plottrBot
         {
             try
             {
-                if (loadedImgType == imgType.bmp)
+                if (Plottr.Filename.EndsWith(".bmp"))
                 {
                     currentTransition = GUIActions.A5startDrawing;
                     handleGUIstates();
@@ -261,7 +343,7 @@ namespace plottrBot
                 //    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
                 //}
                 //else if(currentState == GUIStates.S8svgLoadedUsbConnected)
-                else if (loadedImgType == imgType.svg)
+                else if (Plottr.Filename.EndsWith(".svg"))
                 {
                     bool timedOut = await sendSerialStringAsync("M220 S50\n");
                     countCmdSent = 0;
@@ -387,21 +469,30 @@ namespace plottrBot
 
         private void btnMoveImg_Click(object sender, RoutedEventArgs e)
         {
-            placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text));
+            try
+            {
+                placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text));
+            }
+            catch (Exception ex)
+            {
+                //string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
+                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+
         }
 
         private void btnCenterImg_Click(object sender, RoutedEventArgs e)
         {
             if (btnCenterImg.Content.ToString().Contains("Center"))
             {
-                double currentPicWidth;
-                double currentPicHeight;
-                if (loadedImgType == imgType.svg)
+                double currentPicWidth = 0;
+                double currentPicHeight = 0;
+                if (Plottr.Filename.EndsWith(".svg"))
                 {
                     currentPicWidth = svgPlot.GetImgWidth;
                     currentPicHeight = svgPlot.GetImgHeight;
                 }
-                else
+                else if (Plottr.Filename.EndsWith(".bmp"))
                 {
                     currentPicWidth = myPlot.GetImgWidth;
                     currentPicHeight = myPlot.GetImgHeight;
@@ -420,15 +511,15 @@ namespace plottrBot
             }   
         }
 
-        void placeImageAt(double x, double y)
+        void placeImageAt(int x, int y)
         {
             canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
             canvasPreview.Background = System.Windows.Media.Brushes.White;
 
-            Plottr.ImgMoveX = (int)x;
-            Plottr.ImgMoveY = (int)y;
+            Plottr.ImgMoveX = x;
+            Plottr.ImgMoveY = y;
 
-            if (loadedImgType == imgType.svg)
+            if (Plottr.Filename.EndsWith(".svg"))
             {
                 svgPlot.GenerateGCODE();
                 svgPlot.GeneratePreviewPoints();
@@ -443,7 +534,7 @@ namespace plottrBot
                     canvasPreview.Children.Add(currentDot);
                 }
             }
-            else
+            else if(Plottr.Filename.EndsWith(".bmp"))
             {
                 ImageBrush previewImageBrush = new ImageBrush(myPlot.Img);
                 previewImageBrush.Stretch = Stretch.Fill;
@@ -454,6 +545,7 @@ namespace plottrBot
                 //txtOut.Text += previewImage.Width + "\n" + previewImage.Height + "\n";
                 canvasPreview.Background = previewImageBrush;       //shows the image in the preview canvas
             }
+            //TODO create function that takes in object and previews on canvas to reuse on retenionImage
 
             txtMoveX.Text = Plottr.ImgMoveX.ToString();
             txtMoveY.Text = Plottr.ImgMoveY.ToString();
@@ -662,9 +754,7 @@ namespace plottrBot
             //fix scrollbars in canvas
             //eventuelt bare endre størrelse på canvas??
 
-
             calcCanvasPreviewScale(1.1);
-
 
             //TODO later: add zoom with mouse scroll wheel, and mouse click-to-drag
         }
@@ -701,18 +791,7 @@ namespace plottrBot
             //scrollViewerHoldingCanvasPreview.ScrollableHeight
         }
 
-        private void btnHoldImg_Click(object sender, RoutedEventArgs e)
-        {
-            //TODO add button to hold/release image. applies coordinates to new image, can change coordinates along with new image
-            //release also removes the image. gcode is relevant for last loaded image
-
-
-
-
-        }
-
-
-
+        
         void initCanvasPreview()        //draws dark grey frame around preview canvas
         {
             //canvasPreview.Width = robotWidth;

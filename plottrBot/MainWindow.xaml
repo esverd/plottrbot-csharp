@@ -22,7 +22,7 @@
                 </TabItem.Background>
                 <Grid Background="#FFFBFBFB" Margin="-2,-3,-2,-1">
                     <Grid Margin="-3,35,0,516" Grid.ColumnSpan="2">
-                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="293" Margin="0,16,-1,-1" VerticalAlignment="Top" Width="330"/>
+                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="334" Margin="0,16,-1,-42" VerticalAlignment="Top" Width="330"/>
                         <Button x:Name="btnSliceImg" Content="Slice image" HorizontalAlignment="Left" Margin="19,218,0,-5" VerticalAlignment="Top" Width="290" Click="btnSliceImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <Button x:Name="btnSelectImg" Content="Select image" HorizontalAlignment="Left" Margin="19,42,0,0" VerticalAlignment="Top" Width="290" Click="btnSelectImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <TextBox x:Name="txtMoveX" HorizontalAlignment="Left" Height="24" Margin="45,95,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="85" TextAlignment="Right" ToolTip="Position of top left image corner" FontSize="14"/>
@@ -37,16 +37,17 @@
                         <Button x:Name="btnClearImg" Content="Clear" HorizontalAlignment="Left" Margin="19,170,0,0" VerticalAlignment="Top" Width="290" Click="btnClearImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
                         <Button x:Name="btnZoomIn" Content="Zoom in" HorizontalAlignment="Left" Margin="170,267,0,0" VerticalAlignment="Top" Width="139" FontSize="14" Height="26" Click="btnZoomIn_Click"/>
                         <Button x:Name="btnZoomOut" Content="Zoom out" HorizontalAlignment="Left" Margin="19,267,0,0" VerticalAlignment="Top" Width="139" FontSize="14" Height="26" Click="btnZoomOut_Click"/>
+                        <Button x:Name="btnHoldImg" Content="Hold image" HorizontalAlignment="Left" Margin="19,308,0,-26" VerticalAlignment="Top" Width="290" FontSize="14" Height="26" Click="btnHoldImg_Click"/>
                     </Grid>
                     <Grid Margin="-3,343,0,254">
-                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="213" Margin="0,56,-1,-7" VerticalAlignment="Top" Width="330"/>
-                        <Button x:Name="btnSendImg" Content="Send image to robot" HorizontalAlignment="Left" Margin="19,206,0,0" VerticalAlignment="Top" Width="290" Click="btnSendImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
-                        <Button x:Name="btnConnect" Content="Connect USB" HorizontalAlignment="Left" Margin="177,83,0,0" VerticalAlignment="Top" Width="132" Click="btnConnect_Click" Height="27" FontSize="14"/>
-                        <ComboBox x:Name="comboBoxCOM" HorizontalAlignment="Left" Margin="19,83,0,0" VerticalAlignment="Top" Width="153" DropDownOpened="comboBoxCOM_DropDownOpened" Height="27"/>
-                        <Button x:Name="btnBoundingBox" Content="Move in bounding box formation" HorizontalAlignment="Left" Margin="19,124,0,0" VerticalAlignment="Top" Width="290" Click="btnBoundingBox_Click" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions"/>
+                        <Border BorderBrush="#FFC7C7C7" BorderThickness="1" HorizontalAlignment="Left" Height="213" Margin="0,89,-1,-40" VerticalAlignment="Top" Width="330"/>
+                        <Button x:Name="btnSendImg" Content="Send image to robot" HorizontalAlignment="Left" Margin="19,239,0,-11" VerticalAlignment="Top" Width="290" Click="btnSendImg_Click" Height="34" Background="#FF8B8B8B" FontSize="16"/>
+                        <Button x:Name="btnConnect" Content="Connect USB" HorizontalAlignment="Left" Margin="177,116,0,0" VerticalAlignment="Top" Width="132" Click="btnConnect_Click" Height="27" FontSize="14"/>
+                        <ComboBox x:Name="comboBoxCOM" HorizontalAlignment="Left" Margin="19,116,0,0" VerticalAlignment="Top" Width="153" DropDownOpened="comboBoxCOM_DropDownOpened" Height="27"/>
+                        <Button x:Name="btnBoundingBox" Content="Move in bounding box formation" HorizontalAlignment="Left" Margin="19,157,0,0" VerticalAlignment="Top" Width="290" Click="btnBoundingBox_Click" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions"/>
 
-                        <TextBlock HorizontalAlignment="Left" Margin="19,41,0,0" TextWrapping="Wrap" Text="Robot control" VerticalAlignment="Top" Height="28" FontSize="20" Width="123" Background="#FFFBFBFB"/>
-                        <Button x:Name="btnPauseDrawing" Content="Pause drawing" HorizontalAlignment="Left" Margin="19,165,0,0" VerticalAlignment="Top" Width="290" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions" Click="btnPauseDrawing_Click"/>
+                        <TextBlock HorizontalAlignment="Left" Margin="19,74,0,0" TextWrapping="Wrap" Text="Robot control" VerticalAlignment="Top" Height="28" FontSize="20" Width="123" Background="#FFFBFBFB"/>
+                        <Button x:Name="btnPauseDrawing" Content="Pause drawing" HorizontalAlignment="Left" Margin="19,198,0,0" VerticalAlignment="Top" Width="290" Height="27" FontSize="14" ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions" Click="btnPauseDrawing_Click"/>
                     </Grid>
                 </Grid>
             </TabItem>
