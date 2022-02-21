@@ -446,10 +446,6 @@ namespace plottrBot
             try
             {
                 placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text));
-                //if(Plottr.Filename.EndsWith(".svg"))
-                //    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), svgPlot, false);
-                //else if (Plottr.Filename.EndsWith(".bmp"))
-                //    placeImageAt(Convert.ToInt32(txtMoveX.Text), Convert.ToInt32(txtMoveY.Text), myPlot, false);
             }
             catch (Exception ex)
             {

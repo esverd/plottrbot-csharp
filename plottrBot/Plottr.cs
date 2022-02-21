@@ -71,20 +71,16 @@ namespace plottrBot
         
         private Bitmap TempImg { get; set; }
         static public double ToolDiameter { get; set; }
-        public double GetImgWidth { get { return Img.Width * (25.4 / 96); } }      //gets width in mm
-        public double GetImgHeight { get { return Img.Height * (25.4 / 96); } }    //gets height in mm
+        public double GetImgWidth { get { return ((Img.PixelWidth / Img.DpiX) * 25.4); } }      //gets width in mm
+        public double GetImgHeight { get { return ((Img.PixelHeight / Img.DpiY) * 25.4); } }    //gets height in mm
         public TraceLine BoundingCoordinates { get; set; }      //stores coordinates for bounding box around picture
 
         private double ratioWidthToPx { get; set; }
         private double ratioHeightToPx { get; set; }
         private int pxArrayWidth { get; set; }
-        private int pxArrayHeight { get; set; }
-        
+        private int pxArrayHeight { get; set; }   
         static public bool TimedOut { get; set; }
         public string Filename { get; set; }
-
-        public int ImgMoveX2 { get; set; }
-        public int ImgMoveY2 { get; set; }
 
         public PlottrBMP(string filename)
         {
@@ -94,8 +90,8 @@ namespace plottrBot
             BlackLines = new List<TraceLine>();
             AllLines = new List<TraceLine>();
             GeneratedGCODE = new List<string>();
-            ImgMoveX = 0;
-            ImgMoveY = 0;
+            //ImgMoveX = 0;
+            //ImgMoveY = 0;
             StartGCODE = "";
             //EndGCODE = "";
         }
@@ -108,9 +104,11 @@ namespace plottrBot
             ratioHeightToPx = GetImgHeight / Img.PixelHeight;
 
             double usableImgWidth = GetImgWidth;
-            if (usableImgWidth - ImgMoveX > RobotWidth) usableImgWidth = RobotWidth - ImgMoveX;
+            if (usableImgWidth - ImgMoveX > RobotWidth) 
+                usableImgWidth = RobotWidth - ImgMoveX;
             double usableImgHeight = GetImgHeight;
-            if (usableImgHeight - ImgMoveY > RobotHeight) usableImgHeight = RobotHeight - ImgMoveY;
+            if (usableImgHeight - ImgMoveY > RobotHeight) 
+                usableImgHeight = RobotHeight - ImgMoveY;
 
             pxArrayWidth = (int)(usableImgWidth / ratioWidthToPx);
             pxArrayHeight = (int)(usableImgHeight / ratioHeightToPx);
@@ -124,8 +122,8 @@ namespace plottrBot
                 {
                     Color pixelColor = TempImg.GetPixel(x, y);
                     //Img.CopyPixels()
-                    //if (pixelColor.R <= blackPixelThreshold && pixelColor.G <= blackPixelThreshold && pixelColor.B <= blackPixelThreshold)
-                    if (pixelColor.R == pixelColor.G && pixelColor.R == pixelColor.B && pixelColor.R <= blackPixelThreshold)
+                    if (pixelColor.R <= blackPixelThreshold && pixelColor.G <= blackPixelThreshold && pixelColor.B <= blackPixelThreshold)
+                        //if (pixelColor.R == pixelColor.G && pixelColor.R == pixelColor.B && pixelColor.R <= blackPixelThreshold)
                         pixelArray[x, y] = true;        //true = black pixel
                     else
                         pixelArray[x, y] = false;       //false = white pixel
@@ -193,11 +191,13 @@ namespace plottrBot
 
             for (int x = 0; x < pxArrayWidth; x++)
             {
-                for (int i = 0; i < pxArrayHeight - 1; i++)
+                for (int i = 0; i < pxArrayHeight; i++)     //TODO sjekke pxArrayWidth og pxArrayHeight
                 {
                     int y;
-                    if (goingDown) y = i;
-                    else y = pxArrayHeight - 1 - i;
+                    if (goingDown) 
+                        y = i;
+                    else 
+                        y = pxArrayHeight - 1 - i;
 
                     if (!lineStarted && pixelArray[x, y])       //if this is the first black pixel in a new line
                     {
@@ -206,7 +206,6 @@ namespace plottrBot
                         lineStarted = true;
                     }
 
-                    int endY = y;
                     if (lineStarted)
                     {
                         double totalX0;
@@ -214,29 +213,29 @@ namespace plottrBot
                         double totalX1;
                         double totalY1;
 
-                        if (goingDown && (!pixelArray[x, y + 1] || y >= pxArrayHeight - 2))     //next downward pixel is white OR current array location is beyond pixel height
+                        if (goingDown && (!pixelArray[x, y + 1] || y <= pxArrayHeight))     //next downward pixel is white OR current array location is beyond pixel height
                         {
                             if (pixelArray[x, y + 1])    //check the very last pixel as well
-                                endY = y + 1;
+                                y += 1;
                             lineStarted = false;        //start a new line
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
                             totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
                             //totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            totalY1 = (y * ratioHeightToPx) + ImgMoveY;
                             //totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
-                        if (!goingDown && (!pixelArray[x, y - 1] || y <= 1))
+                        if (!goingDown && (!pixelArray[x, y - 1] || y >= 0))        //next upward pixel is white OR current array location is above first pixel in image
                         {
                             if (pixelArray[x, y - 1])    //check the very last pixel as well
-                                endY = y - 1;       //endY = y + 1;
+                                y -= 1;       //endY = y + 1;
                             lineStarted = false;
                             totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
                             totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
                             //totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
                             totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            totalY1 = (endY * ratioHeightToPx) + ImgMoveY;
+                            totalY1 = (y * ratioHeightToPx) + ImgMoveY;
                             //totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
