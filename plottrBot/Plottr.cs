@@ -309,8 +309,8 @@ namespace plottrBot
 
         public void GenerateGCODE()
         {
-            calcMovementSideToSide();
-            //calcMovementUpDown();
+            //calcMovementSideToSide();
+            calcMovementUpDown();
             AllLines.Clear();
             GeneratedGCODE.Clear();
 
@@ -321,15 +321,18 @@ namespace plottrBot
 
             for (int i = 0; i < BlackLines.Count - 1; i++)
             {
-                double tempY0 = getYStretched(BlackLines[i].Y0) + getYOffset(BlackLines[i].Y0);
-                double tempY1 = getYStretched(BlackLines[i].Y1) + getYOffset(BlackLines[i].Y1);
-                AllLines.Add(new TraceLine(BlackLines[i].X0, tempY0, BlackLines[i].X1, tempY1, true));      //stores the current line to be drawn
-                
-                tempY0 = getYStretched(BlackLines[i + 1].Y0) + getYOffset(BlackLines[i + 1].Y0);
-                AllLines.Add(new TraceLine(BlackLines[i].X1, tempY1, BlackLines[i + 1].X0, tempY0, false));   //moves draw head to position for next line
+                //double tempY0 = getYStretched(BlackLines[i].Y0) + getYOffset(BlackLines[i].Y0);
+                //double tempY1 = getYStretched(BlackLines[i].Y1) + getYOffset(BlackLines[i].Y1);
+                //double tempY0 = getYOffset(BlackLines[i].Y0);
+                //double tempY1 = getYStretched(BlackLines[i].Y1)
+                //AllLines.Add(new TraceLine(BlackLines[i].X0, tempY0, BlackLines[i].X1, tempY1, true));      //stores the current line to be drawn
+                //tempY0 = getYStretched(BlackLines[i + 1].Y0) + getYOffset(BlackLines[i + 1].Y0);
+                //AllLines.Add(new TraceLine(BlackLines[i].X1, tempY1, BlackLines[i + 1].X0, tempY0, false));   //moves draw head to position for next line
 
-                //AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
-                //AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
+                AllLines.Add(new TraceLine(BlackLines[i].X0, BlackLines[i].Y0, BlackLines[i].X1, BlackLines[i].Y1, true));      //stores the current line to be drawn
+                AllLines.Add(new TraceLine(BlackLines[i].X1, BlackLines[i].Y1, BlackLines[i + 1].X0, BlackLines[i + 1].Y0, false));   //moves draw head to position for next line
+                if (i == BlackLines.Count - 2)      //to convert the very last BlackLine to GCODE
+                    AllLines.Add(new TraceLine(BlackLines[i + 1].X0, BlackLines[i + 1].Y0, BlackLines[i + 1].X1, BlackLines[i + 1].Y1, true));
 
                 //finding the minimum and maximum values for both X and Y positions. used to draw the bounding box in GUI
                 if (BlackLines[i].X0 < xMinVal || BlackLines[i].X1 < xMinVal)
