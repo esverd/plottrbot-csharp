@@ -242,18 +242,6 @@ namespace plottrBot
                             double totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
                             double totalX1 = (x * ratioWidthToPx) + ImgMoveX;
                             double totalY1 = (y * ratioHeightToPx) + ImgMoveY;
-
-                            //if (goingDown)
-                            //{
-                            //    totalY0 = getYOffset(totalY0);
-                            //    totalY1 = getYStretched(totalY1);
-                            //}
-                            //else
-                            //{
-                            //    totalY0 = getYStretched(totalY0);
-                            //    totalY1 = getYOffset(totalY1);
-                            //}
-                            
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
 
@@ -266,9 +254,8 @@ namespace plottrBot
 
         private double getYStretched(double inY)
         {
-            //s(y) = a*y + b
-
             //used when calibrating in calcMovementUpDown:
+            //s(y) = a*y + b
             //double sy0 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (67.0 / 66) * (65 / 66.5);
             //double sy1 = (69.0 / 66.0) * (68.5 / 66.8) * (68.0 / 68.9) * (68 / 71.6) * (68 / 67.1) * (73 / 68.0) * (65.0 / 66) * (65.0 / 66);
             //double y0 = 250.0; //in mm
@@ -279,6 +266,7 @@ namespace plottrBot
             //return (inY * stretchCoefficient);
             //double scaleCoefficient = (stretchVal1 - stretchVal0) / (stretchVal1atY - stretchVal0atY);
 
+
             //used when calibrating in GenerateGCODE:
             //double sy0 = (65 / 62.2);       //at y=250
             //double sy1 = (65 / 64.7) * (65 / 64.3);       //at y=590
@@ -288,25 +276,14 @@ namespace plottrBot
             //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
             //double stretchCoefficient = (inY * a) + b;
             //return (inY * stretchCoefficient);
-
-            //used when calibrating in calcMovementUpDown:
-            double sy0 = Math.Pow((67.0 / 63), (1 / 1));    //at y=250. need to take the third root of the coefficient, because the coefficient is measured after three lines
-            double sy1 = Math.Pow((66.0 / 65), (1 / 1));    //at y=590
-            double y0 = 250.0; //in mm
-            double y1 = 590.0;
-            double a = (sy1 - sy0) / (y1 - y0);
-            double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
-            double stretchCoefficient = (inY * a) + b;
-            //return (inY * stretchCoefficient);
-            return inY * sy0;
+            return inY;
 
         }
 
         private double getYOffset(double inY)
         {
-            //s(y) = a*y + b
-
             //used when calibrating in calcMovementUpDown:
+            //s(y) = a*y + b
             //double sy0 = -1.5;
             //double sy1 = -0.8;      //negative sign equals further down from the robot
             //double y0 = 250.0;      //in mm
@@ -326,7 +303,7 @@ namespace plottrBot
             //double b = ((sy0 - (a * y0)) + (sy1 - (a * y1))) / 2.0;
             //double offsetCoefficient = (inY * a) + b;
             //return offsetCoefficient;
-            return inY;
+            return 0;
         }
 
 
