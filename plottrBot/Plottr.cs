@@ -68,8 +68,8 @@ namespace plottrBot
         private bool[,] pixelArray { get; set; }        //array used for storing white/black pixels as true/false
         public List<TraceLine> BlackLines { get; private set; }     //stores all black lines to be drawn
         public List<TraceLine> AllLines { get; private set; }       //stores all movements as straight lines
-        
-        private Bitmap TempImg { get; set; }
+
+        public Bitmap TempImg { get; private set; }
         static public double ToolDiameter { get; set; }
         public double GetImgWidth { get { return ((Img.PixelWidth / Img.DpiX) * 25.4); } }      //gets width in mm
         public double GetImgHeight { get { return ((Img.PixelHeight / Img.DpiY) * 25.4); } }    //gets height in mm
@@ -94,6 +94,19 @@ namespace plottrBot
             //ImgMoveY = 0;
             StartGCODE = "";
             //EndGCODE = "";
+        }
+
+        public PlottrBMP(Stream stream)
+        {
+            Img = new BitmapImage();
+            Img.BeginInit();
+            Img.StreamSource = stream;
+            Img.CacheOption = BitmapCacheOption.OnLoad;
+            Img.EndInit();
+            TempImg = new Bitmap(stream);
+            BlackLines = new List<TraceLine>();
+            AllLines = new List<TraceLine>();
+            GeneratedGCODE = new List<string>();
         }
 
         private void imgToArray()

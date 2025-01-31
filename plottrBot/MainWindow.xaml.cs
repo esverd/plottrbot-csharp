@@ -81,15 +81,22 @@ namespace plottrBot
 
         private void btnUpdateDpi_Click(object sender, RoutedEventArgs e)
         {
-            // 1) Parse user’s text as an integer:
             if (int.TryParse(txtDpi.Text, out int newDpi))
             {
-                // 2) Use newDpi to update your currently loaded image.
-                //    e.g., if you have an Image object or a Bitmap you can set its DPI
-                //    For example (pseudo-code):
-                //    myBitmap.SetResolution(newDpi, newDpi);
+                if (myPlot != null)
+                {
+                    // Save the image with the new DPI to a MemoryStream
+                    using (MemoryStream memoryStream = new MemoryStream())
+                    {
+                        SaveBitmapWithDpi(myPlot.TempImg, memoryStream, newDpi, newDpi);
+                        memoryStream.Position = 0;
 
-                MessageBox.Show($"DPI updated to {newDpi}");
+                        // Reload the image with the new DPI from the MemoryStream
+                        myPlot = new PlottrBMP(memoryStream);
+                        placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
+                        MessageBox.Show($"DPI updated to {newDpi}");
+                    }
+                }
             }
             else
             {
@@ -97,6 +104,14 @@ namespace plottrBot
             }
         }
 
+        private void SaveBitmapWithDpi(Bitmap bitmap, MemoryStream memoryStream, int dpiX, int dpiY)
+        {
+            using (Bitmap newBitmap = new Bitmap(bitmap))
+            {
+                newBitmap.SetResolution(dpiX, dpiY);
+                newBitmap.Save(memoryStream, ImageFormat.Bmp);
+            }
+        }
 
         //canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
         //canvasPreview.Background = System.Windows.Media.Brushes.White;
@@ -107,19 +122,17 @@ namespace plottrBot
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
-                //bool result = (bool)openFileDialog.ShowDialog();
                 if ((bool)openFileDialog.ShowDialog())
                 {
-                    clearEverything();     //removes previous images/elements from the canvas
-                    
-                    if (openFileDialog.FileName.EndsWith(".bmp"))      //loaded .bmp image
+                    clearEverything(); // removes previous images/elements from the canvas
+
+                    if (openFileDialog.FileName.EndsWith(".bmp")) // loaded .bmp image
                     {
-                        //loadedImgType = imgType.bmp;
                         currentTransition = GUIActions.A0bmpOpen;
                         handleGUIstates();
 
                         Plottr.Filename = openFileDialog.FileName;
-                        myPlot = new PlottrBMP(Plottr.Filename);      //creates a plottr object with the selected image
+                        myPlot = new PlottrBMP(Plottr.Filename); // creates a plottr object with the selected image
 
                         if (retentionImage == null)
                         {
@@ -132,25 +145,17 @@ namespace plottrBot
                             Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
 
-                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
-
+                        // Display the current DPI
+                        txtDpi.Text = myPlot.TempImg.HorizontalResolution.ToString();
                     }
-                    else if (openFileDialog.FileName.EndsWith(".svg"))      //loaded .svg image
+                    else if (openFileDialog.FileName.EndsWith(".svg")) // loaded .svg image
                     {
-                        //c# will split svg into following components: M, L, Z, C, Q
-                        //c# will then send these components as gcode to the robot
-                        //the robot will then read and handle the gcode calling on the necessary type ov movement function
-
-                        //loadedImgType = imgType.svg;
                         currentTransition = GUIActions.A3svgOpen;
                         handleGUIstates();
 
                         Plottr.Filename = openFileDialog.FileName;
                         svgPlot = new SVGPlottr(Plottr.Filename);
-                        //svgPlot.GeneratePreviewPoints();
 
-                        //currentTransition = GUITransitions.H8svgOpen;
-                        //handleGUIstates();
                         if (retentionImage == null)
                         {
                             Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
@@ -161,15 +166,11 @@ namespace plottrBot
                             Plottr.ImgMoveX = retentionImage.ImgMoveX;
                             Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
-
-                        //placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, svgPlot, false);
                     }
                     else
                         throw new Exception("Not supported file type");
 
-                    //MessageBox.Show(Plottr.ImgMoveX.ToString(), "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY);     //places the image in the center of preview canvas
-
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY); // places the image in the center of preview canvas
                 }
             }
             catch (Exception ex)
@@ -178,6 +179,7 @@ namespace plottrBot
                 MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
+
 
         private void btnHoldImg_Click(object sender, RoutedEventArgs e)
         {
