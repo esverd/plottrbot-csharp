@@ -251,6 +251,22 @@
                                     Click="btnCmdStart_Click"/>
                         </StackPanel>
 
+                        <!-- Command slider -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Slider x:Name="sliderCmdCount"
+                                    Width="200"
+                                    SmallChange="1"
+                                    ValueChanged="sliderCmdCount_ValueChanged"/>
+                            <Button x:Name="btnSliderDecrease"
+                                    Content="&lt;"
+                                    Width="20" Margin="5,0,0,0"
+                                    Click="btnSliderIncDec"/>
+                            <Button x:Name="btnSliderIncrease"
+                                    Content="&gt;"
+                                    Width="20" Margin="5,0,0,0"
+                                    Click="btnSliderIncDec"/>
+                        </StackPanel>                        
+                        
                         <!-- Enable/Disable motors -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Button x:Name="btnEnableStepper"
@@ -284,21 +300,21 @@
                                 Margin="0,0,0,10"
                                 Click="btnHomePosition_Click"/>
 
-                        <!-- Command slider -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Slider x:Name="sliderCmdCount"
-                                    Width="200"
-                                    SmallChange="1"
-                                    ValueChanged="sliderCmdCount_ValueChanged"/>
-                            <Button x:Name="btnSliderDecrease"
-                                    Content="&lt;"
-                                    Width="20" Margin="5,0,0,0"
-                                    Click="btnSliderIncDec"/>
-                            <Button x:Name="btnSliderIncrease"
-                                    Content="&gt;"
-                                    Width="20" Margin="5,0,0,0"
-                                    Click="btnSliderIncDec"/>
+                        <!-- Show and update loaded image DPI -->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Current DPI:" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txtDpi"
+                         Width="60"
+                         Height="24"
+                         Margin="5,0,0,0"
+                         Text=""
+                         TextAlignment="Right"/>
+                            <Button x:Name="btnUpdateDpi"
+                        Content="Update DPI"
+                        Margin="10,0,0,0"
+                        Click="btnUpdateDpi_Click"/>
                         </StackPanel>
+
 
                         <!-- Robot dimensions -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">

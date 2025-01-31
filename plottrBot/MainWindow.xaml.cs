@@ -79,7 +79,24 @@ namespace plottrBot
             retentionImage = null;
         }
 
-        
+        private void btnUpdateDpi_Click(object sender, RoutedEventArgs e)
+        {
+            // 1) Parse user’s text as an integer:
+            if (int.TryParse(txtDpi.Text, out int newDpi))
+            {
+                // 2) Use newDpi to update your currently loaded image.
+                //    e.g., if you have an Image object or a Bitmap you can set its DPI
+                //    For example (pseudo-code):
+                //    myBitmap.SetResolution(newDpi, newDpi);
+
+                MessageBox.Show($"DPI updated to {newDpi}");
+            }
+            else
+            {
+                MessageBox.Show("Invalid DPI value. Please enter a number.");
+            }
+        }
+
 
         //canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
         //canvasPreview.Background = System.Windows.Media.Brushes.White;
