@@ -209,9 +209,9 @@ namespace plottrBot
                 for (int i = 0; i < pxArrayHeight; i++)
                 {
                     int y;
-                    if (goingDown) 
+                    if (goingDown)
                         y = i;
-                    else 
+                    else
                         y = pxArrayHeight - 1 - i;
 
                     if (!lineStarted && pixelArray[x, y])       //if this is the first black pixel in a new line
@@ -223,22 +223,22 @@ namespace plottrBot
 
                     if (lineStarted)
                     {
-                        if (goingDown && (!pixelArray[x, y + 1] || y > pxArrayHeight))     //next downward pixel is white OR current array location is beyond pixel height
+                        if (goingDown && (y + 1 >= pxArrayHeight || !pixelArray[x, y + 1] || y > pxArrayHeight))     //next downward pixel is white OR current array location is beyond pixel height
                         {
-                            if (pixelArray[x, y + 1])    //check the very last pixel as well
+                            if (y + 1 < pxArrayHeight && pixelArray[x, y + 1])    //check the very last pixel as well
                                 y += 1;
                             lineStarted = false;        //start a new line
-                            //totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
-                            //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
-                            ////totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
-                            //totalX1 = (x * ratioWidthToPx) + ImgMoveX;
-                            //totalY1 = (y * ratioHeightToPx) + ImgMoveY;
-                            ////totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
-                            //BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
+                                                        //totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
+                                                        //totalY0 = (y0 * ratioHeightToPx) + ImgMoveY;
+                                                        ////totalY0 = getYStretched(y0 * ratioHeightToPx) + ImgMoveY + getYOffset(y0 * ratioHeightToPx);
+                                                        //totalX1 = (x * ratioWidthToPx) + ImgMoveX;
+                                                        //totalY1 = (y * ratioHeightToPx) + ImgMoveY;
+                                                        ////totalY1 = getYStretched(endY * ratioHeightToPx) + ImgMoveY + getYOffset(endY * ratioHeightToPx);
+                                                        //BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
-                        if (!goingDown && (!pixelArray[x, y - 1] || y < 0))        //next upward pixel is white OR current array location is above first pixel in image
+                        if (!goingDown && (y - 1 < 0 || !pixelArray[x, y - 1] || y < 0))        //next upward pixel is white OR current array location is above first pixel in image
                         {
-                            if (pixelArray[x, y - 1])    //check the very last pixel as well
+                            if (y - 1 >= 0 && pixelArray[x, y - 1])    //check the very last pixel as well
                                 y -= 1;       //endY = y + 1;
                             lineStarted = false;
                             //totalX0 = (x0 * ratioWidthToPx) + ImgMoveX;
@@ -266,16 +266,17 @@ namespace plottrBot
                             //    totalY0 = getYStretched(totalY0);
                             //    totalY1 = getYOffset(totalY1);
                             //}
-                            
+
                             BlackLines.Add(new TraceLine(totalX0, totalY0, totalX1, totalY1));      //saves coordinates of last pixel in the line
                         }
 
                     }
-                    
+
                 } //for i 
                 goingDown = !goingDown;
             } //for x
         }
+
 
         private double getYStretched(double inY)
         {
