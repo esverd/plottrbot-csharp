@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrbot\\plottr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|solutionrelative:plottrbot\\plottr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrbot\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|solutionrelative:plottrbot\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|c:\\d\\creative wip\\cs, plottrbot\\plottrbot\\plottrbot\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|solutionrelative:plottrbot\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|c:\\d\\creative wip\\cs, plottrbot\\plottrbot\\plottrbot\\plottr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|solutionrelative:plottrbot\\plottr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9B60E6DC-47C8-432A-92A5-82B03763014C}|plottrBot\\plottrBot.csproj|C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrbot\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
@@ -22,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,15 +30,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "plottrBot\\MainWindow.xaml.cs",
               "ToolTip": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\MainWindow.xaml.cs",
               "RelativeToolTip": "plottrBot\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAHwBAAAAAAAAAAAuwI8BAAAgAAAAAAAAAA==",
+              "ViewState": "AgIAAH4BAAAAAAAAAAAYwI8BAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2022-03-07T09:58:48.408Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Plottr.cs",
+              "DocumentMoniker": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\Plottr.cs",
+              "RelativeDocumentMoniker": "plottrBot\\Plottr.cs",
+              "ToolTip": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\Plottr.cs",
+              "RelativeToolTip": "plottrBot\\Plottr.cs",
+              "ViewState": "AgIAAL0AAAAAAAAAAAAswPsAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2022-03-07T09:59:03.944Z",
               "EditorCaption": ""
             },
             {
@@ -51,19 +64,6 @@
               "RelativeToolTip": "plottrBot\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2025-01-31T16:04:02.449Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Plottr.cs",
-              "DocumentMoniker": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\Plottr.cs",
-              "RelativeDocumentMoniker": "plottrBot\\Plottr.cs",
-              "ToolTip": "C:\\D\\CREATIVE WIP\\Cs, plottrBot\\plottrBot\\plottrBot\\Plottr.cs*",
-              "RelativeToolTip": "plottrBot\\Plottr.cs*",
-              "ViewState": "AgIAAM0AAAAAAAAAAAAvwOIAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2022-03-07T09:59:03.944Z",
-              "EditorCaption": ""
             }
           ]
         }

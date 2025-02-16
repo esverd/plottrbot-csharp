@@ -94,7 +94,7 @@ namespace plottrBot
                         // Reload the image with the new DPI from the MemoryStream
                         myPlot = new PlottrBMP(memoryStream);
                         placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY, myPlot, false);
-                        MessageBox.Show($"DPI updated to {newDpi}");
+                        //MessageBox.Show($"DPI updated to {newDpi}");
                     }
                 }
             }
