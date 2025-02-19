@@ -53,3 +53,7 @@ C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.CoreCompileInputs.cac
 C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.Up2Date
 C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.exe
 C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.pdb
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\Stateless.dll
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\Stateless.xml
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\GeneratedInternalTypeHelper.g.cs
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot_MarkupCompile.lref

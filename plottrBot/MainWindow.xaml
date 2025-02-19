@@ -4,16 +4,26 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:plottrBot.ViewModels"
+        xmlns:conv="clr-namespace:plottrBot.Converters"
         mc:Ignorable="d"
         Title="Warhol Slicer"
         Height="1000" Width="1600"
         Icon="scarJo-small.bmp">
 
-    <!-- 
-       Top-level Grid with two columns:
+    <Window.Resources>
+        <!-- InverseBooleanConverter defined in plottrBot.Converters -->
+        <conv:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+    </Window.Resources>
+
+    <!-- Set DataContext to the new ViewModel -->
+    <Window.DataContext>
+        <vm:MainWindowViewModel/>
+    </Window.DataContext>
+
+    <!-- Top-level Grid with two columns:
          Column 0: TabControl (menu)
-         Column 1: Preview area
-    -->
+         Column 1: Preview area -->
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -26,27 +36,16 @@
              TAB CONTROL on the LEFT
         ========================== -->
         <TabControl x:Name="tabControlOptions"
-                   FontSize="14"
-                   Grid.Column="0"
-                   Margin="0,0,10,0"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Stretch">
-
+                    FontSize="14"
+                    Grid.Column="0"
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch">
             <!-- =========== TAB #1: CONTROL =========== -->
             <TabItem Header="Control">
-                <!-- 
-                    ScrollViewer ensures content scrolls 
-                    if it's too large for the visible area.
-                -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <!-- 
-                        A vertical StackPanel to lay out:
-                          1) "Image options" block
-                          2) "Robot control" block
-                    -->
                     <StackPanel Background="#FFFBFBFB" Margin="10">
-
                         <!-- =============== IMAGE OPTIONS =============== -->
                         <Border BorderBrush="#FFC7C7C7" BorderThickness="1"
                                 Margin="0,0,0,10"
@@ -55,15 +54,22 @@
                                 <TextBlock Text="Image options" 
                                            FontSize="20" 
                                            Margin="0,0,0,10"/>
-
-                                <Button x:Name="btnSelectImg"
-                                        Content="Select image"
-                                        Height="34"
-                                        Background="#FF8B8B8B"
-                                        FontSize="16"
-                                        Margin="0,0,0,10"
-                                        Click="btnSelectImg_Click"/>
-
+                                <!-- Open image buttons (BMP and SVG) -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button x:Name="btnSelectImg"
+                                            Content="Select image (BMP)"
+                                            Height="34"
+                                            Background="#FF8B8B8B"
+                                            FontSize="16"
+                                            Margin="0,0,10,0"
+                                            Command="{Binding OpenBmpCommand}"/>
+                                    <Button x:Name="btnSelectSvg"
+                                            Content="Select image (SVG)"
+                                            Height="34"
+                                            Background="#FF8B8B8B"
+                                            FontSize="16"
+                                            Command="{Binding OpenSvgCommand}"/>
+                                </StackPanel>
                                 <!-- X-position row -->
                                 <StackPanel Orientation="Horizontal"
                                             Margin="0,0,0,10">
@@ -84,7 +90,6 @@
                                             VerticalAlignment="Center"
                                             Click="btnMoveImg_Click"/>
                                 </StackPanel>
-
                                 <!-- Y-position row -->
                                 <StackPanel Orientation="Horizontal"
                                             Margin="0,0,0,10">
@@ -105,7 +110,6 @@
                                             VerticalAlignment="Center"
                                             Click="btnCenterImg_Click"/>
                                 </StackPanel>
-
                                 <!-- Clear image -->
                                 <Button x:Name="btnClearImg"
                                         Content="Clear"
@@ -113,8 +117,8 @@
                                         Background="#FF8B8B8B"
                                         FontSize="16"
                                         Margin="0,0,0,10"
-                                        Click="btnClearImg_Click"/>
-
+                                        Command="{Binding ClearCommand}"
+                                        IsEnabled="{Binding IsImageLoaded}"/>
                                 <!-- Zoom out / Zoom in row -->
                                 <StackPanel Orientation="Horizontal"
                                             Margin="0,0,0,10">
@@ -128,7 +132,6 @@
                                             FontSize="14"
                                             Click="btnZoomIn_Click"/>
                                 </StackPanel>
-
                                 <!-- Slice image -->
                                 <Button x:Name="btnSliceImg"
                                         Content="Slice image"
@@ -136,9 +139,9 @@
                                         Background="#FF8B8B8B"
                                         FontSize="16"
                                         Margin="0,0,0,10"
-                                        Click="btnSliceImg_Click"/>
-
-                                <!-- Hold image -->
+                                        Command="{Binding SliceBmpCommand}"
+                                        IsEnabled="{Binding IsImageLoaded}"/>
+                                <!-- Hold image (code-behind remains) -->
                                 <Button x:Name="btnHoldImg"
                                         Content="Hold image"
                                         FontSize="14"
@@ -146,7 +149,6 @@
                                         Click="btnHoldImg_Click"/>
                             </StackPanel>
                         </Border>
-
                         <!-- =============== ROBOT CONTROL =============== -->
                         <Border BorderBrush="#FFC7C7C7" BorderThickness="1"
                                 Padding="10">
@@ -154,8 +156,7 @@
                                 <TextBlock Text="Robot control"
                                            FontSize="20"
                                            Margin="0,0,0,10"/>
-
-                                <!-- COM port + Connect USB -->
+                                <!-- COM port + Connect/Disconnect USB -->
                                 <StackPanel Orientation="Horizontal" 
                                             Margin="0,0,0,10">
                                     <ComboBox x:Name="comboBoxCOM"
@@ -166,9 +167,16 @@
                                             Width="130" Height="27"
                                             Margin="10,0,0,0"
                                             FontSize="14"
-                                            Click="btnConnect_Click"/>
+                                            Command="{Binding ConnectUsbCommand}"
+                                            IsEnabled="{Binding IsUsbConnected, Converter={StaticResource InverseBoolConverter}}"/>
+                                    <Button x:Name="btnDisconnect"
+                                            Content="Disconnect USB"
+                                            Width="130" Height="27"
+                                            Margin="10,0,0,0"
+                                            FontSize="14"
+                                            Command="{Binding DisconnectUsbCommand}"
+                                            IsEnabled="{Binding IsUsbConnected}"/>
                                 </StackPanel>
-
                                 <!-- Move in bounding box formation -->
                                 <Button x:Name="btnBoundingBox"
                                         Content="Move in bounding box formation"
@@ -177,7 +185,6 @@
                                         Margin="0,0,0,10"
                                         ToolTip="Moves the drawing head in a square box indicating the furthest pixels in all directions"
                                         Click="btnBoundingBox_Click"/>
-
                                 <!-- Pause drawing -->
                                 <Button x:Name="btnPauseDrawing"
                                         Content="Pause drawing"
@@ -185,26 +192,24 @@
                                         Height="27"
                                         Margin="0,0,0,10"
                                         Click="btnPauseDrawing_Click"/>
-
                                 <!-- Send image to robot -->
                                 <Button x:Name="btnSendImg"
                                         Content="Send image to robot"
                                         Height="34"
                                         Background="#FF8B8B8B"
                                         FontSize="16"
-                                        Click="btnSendImg_Click"/>
+                                        Command="{Binding StartDrawingCommand}"
+                                        IsEnabled="{Binding IsImageSliced}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-
             <!-- =========== TAB #2: ADVANCED =========== -->
             <TabItem Header="Advanced">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Auto">
                     <StackPanel Background="#FFFBFBFB" Margin="10">
-
                         <!-- Status messages -->
                         <TextBox x:Name="txtOut"
                                  Text="Status messages&#xA;"
@@ -212,7 +217,6 @@
                                  IsReadOnly="True"
                                  Height="136"
                                  Margin="0,0,0,10"/>
-
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBox x:Name="txtSerialCmd"
                                      Width="180" Height="27"
@@ -223,12 +227,10 @@
                                     Margin="10,0,0,0"
                                     Click="btnSend_Click"/>
                         </StackPanel>
-
                         <CheckBox x:Name="checkBoxDrawingBoundingBox"
                                   Content="Use pen when indicating bounding box"
                                   FontSize="14"
                                   Margin="0,0,0,10"/>
-
                         <!-- End GCODE -->
                         <TextBlock Text="End GCODE" Margin="0,0,0,5"/>
                         <TextBox x:Name="txtEndGcode"
@@ -236,7 +238,6 @@
                                  AcceptsReturn="True"
                                  Height="93"
                                  Margin="0,0,0,10"/>
-
                         <!-- Start cmd number -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBox x:Name="txtCmdStart"
@@ -250,7 +251,6 @@
                                     Margin="10,0,0,0"
                                     Click="btnCmdStart_Click"/>
                         </StackPanel>
-
                         <!-- Command slider -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Slider x:Name="sliderCmdCount"
@@ -265,8 +265,7 @@
                                     Content="&gt;"
                                     Width="20" Margin="5,0,0,0"
                                     Click="btnSliderIncDec"/>
-                        </StackPanel>                        
-                        
+                        </StackPanel>
                         <!-- Enable/Disable motors -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Button x:Name="btnEnableStepper"
@@ -279,7 +278,6 @@
                                     Margin="10,0,0,0"
                                     Click="btnDisableStepper_Click"/>
                         </StackPanel>
-
                         <!-- Tool to canvas -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Button x:Name="btnPenTouchCanvas"
@@ -292,30 +290,26 @@
                                     Margin="10,0,0,0"
                                     Click="btnNoPenTouchCanvas_Click"/>
                         </StackPanel>
-
                         <!-- Home position -->
                         <Button x:Name="btnHomePosition"
                                 Content="Move to home position"
                                 Height="27"
                                 Margin="0,0,0,10"
                                 Click="btnHomePosition_Click"/>
-
                         <!-- Show and update loaded image DPI -->
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <TextBlock Text="Current DPI:" VerticalAlignment="Center"/>
                             <TextBox x:Name="txtDpi"
-                         Width="60"
-                         Height="24"
-                         Margin="5,0,0,0"
-                         Text=""
-                         TextAlignment="Right"/>
+                                     Width="60"
+                                     Height="24"
+                                     Margin="5,0,0,0"
+                                     Text=""
+                                     TextAlignment="Right"/>
                             <Button x:Name="btnUpdateDpi"
-                        Content="Update DPI"
-                        Margin="10,0,0,0"
-                        Click="btnUpdateDpi_Click"/>
+                                    Content="Update DPI"
+                                    Margin="10,0,0,0"
+                                    Click="btnUpdateDpi_Click"/>
                         </StackPanel>
-
-
                         <!-- Robot dimensions -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="Robot width" VerticalAlignment="Center"/>
@@ -327,7 +321,6 @@
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
-
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Text="Robot height" VerticalAlignment="Center"/>
                             <TextBox x:Name="txtRHeight"
@@ -338,12 +331,10 @@
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
-
                         <Button x:Name="btnSaveDimension"
                                 Content="Save dimensions"
                                 Height="26"
                                 Click="btnSaveDimension_Click"/>
-
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
