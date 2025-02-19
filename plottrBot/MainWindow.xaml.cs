@@ -607,7 +607,13 @@ namespace plottrBot
             try
             {
                 int cmdNo = Convert.ToInt32(txtCmdStart.Text);
-                countCmdSent = myPlot.GeneratedGCODE.IndexOf(string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
+                if (cmdNo < 0 || cmdNo >= myPlot.AllLines.Count)
+                {
+                    MessageBox.Show("Command number out of range.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                // Calculate the index based on the known structure:
+                countCmdSent = 2 + (cmdNo * 2) + 1;
                 btnSendImg_Click(sender, e);
             }
             catch (Exception ex)
@@ -615,6 +621,7 @@ namespace plottrBot
                 MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
         }
+
 
         private async void btnEnableStepper_Click(object sender, RoutedEventArgs e)
         {

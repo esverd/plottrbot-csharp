@@ -35,3 +35,21 @@ C:\D\CREATIVE WIP\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csproj.C
 C:\D\CREATIVE WIP\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.exe
 C:\D\CREATIVE WIP\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.pdb
 C:\D\CREATIVE WIP\Cs, plottrBot\plottrBot\plottrBot\obj\Debug\plottrBot.csproj.Up2Date
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\plottrBot.exe.config
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\plottrBot.exe
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\plottrBot.pdb
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\Fizzler.dll
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\Svg.dll
+C:\D\plottrbot-csharp\plottrBot\bin\Debug\Svg.xml
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.AssemblyReference.cache
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\MainWindow.baml
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\MainWindow.g.cs
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\App.g.cs
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot_MarkupCompile.cache
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.g.resources
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.Properties.Resources.resources
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.GenerateResource.cache
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.CoreCompileInputs.cache
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.csproj.Up2Date
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.exe
+C:\D\plottrbot-csharp\plottrBot\obj\Debug\plottrBot.pdb
