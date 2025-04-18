@@ -48,6 +48,11 @@ namespace plottrBot
         //enum imgType { bmp, svg };
         //imgType loadedImgType;
 
+        private readonly Dictionary<(GUIStates, GUIActions), GUIStates> stateTransitions;
+
+        private Dictionary<GUIStates, Action> guiStateActions;
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -67,10 +72,11 @@ namespace plottrBot
 
             selectedPreviewLine = new Line();
 
+            stateTransitions = InitializeStateTransitions();
+            InitializeGuiStateActions();
+
             currentState = GUIStates.S0blank;
-            updateGUIelements();
-            //currentState = GUIStates.T0blank;
-            //updateGUIelements();
+            updateGUIelements(); // Update GUI based on initial state
 
             Plottr.StartGCODE = "G1 Z1\n";
             Plottr.EndGCODE = txtEndGcode.Text + "\n";
@@ -124,16 +130,16 @@ namespace plottrBot
                 openFileDialog.Filter = "Image file (*.bmp) | *.bmp|Vector file (*.svg) | *.svg";
                 if ((bool)openFileDialog.ShowDialog())
                 {
-                    clearEverything(); // removes previous images/elements from the canvas
+                    clearEverything(); // Clears canvas, sets myPlot/svgPlot to null
 
                     if (openFileDialog.FileName.EndsWith(".bmp")) // loaded .bmp image
                     {
-                        currentTransition = GUIActions.A0bmpOpen;
-                        handleGUIstates();
+                        currentTransition = GUIActions.A0bmpOpen; // SET TRANSITION FIRST
 
                         Plottr.Filename = openFileDialog.FileName;
-                        myPlot = new PlottrBMP(Plottr.Filename); // creates a plottr object with the selected image
+                        myPlot = new PlottrBMP(Plottr.Filename); // Creates object
 
+                        // Center or use retention position
                         if (retentionImage == null)
                         {
                             Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - myPlot.GetImgWidth) / 2);
@@ -144,18 +150,16 @@ namespace plottrBot
                             Plottr.ImgMoveX = retentionImage.ImgMoveX;
                             Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
-
-                        // Display the current DPI
-                        txtDpi.Text = myPlot.TempImg.HorizontalResolution.ToString();
+                        txtDpi.Text = myPlot.TempImg.HorizontalResolution.ToString(); // Update DPI display
                     }
                     else if (openFileDialog.FileName.EndsWith(".svg")) // loaded .svg image
                     {
-                        currentTransition = GUIActions.A3svgOpen;
-                        handleGUIstates();
+                        currentTransition = GUIActions.A3svgOpen; // SET TRANSITION FIRST
 
                         Plottr.Filename = openFileDialog.FileName;
-                        svgPlot = new SVGPlottr(Plottr.Filename);
+                        svgPlot = new SVGPlottr(Plottr.Filename); // Creates object
 
+                        // Center or use retention position
                         if (retentionImage == null)
                         {
                             Plottr.ImgMoveX = Convert.ToInt32((Plottr.RobotWidth - svgPlot.GetImgWidth) / 2);
@@ -166,20 +170,28 @@ namespace plottrBot
                             Plottr.ImgMoveX = retentionImage.ImgMoveX;
                             Plottr.ImgMoveY = retentionImage.ImgMoveY;
                         }
+                        // No DPI for SVG
+                        txtDpi.Text = "";
                     }
                     else
+                    {
                         throw new Exception("Not supported file type");
+                    }
 
-                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY); // places the image in the center of preview canvas
+                    // Common logic after loading either type
+                    handleGUIstates(); // UPDATE STATE MACHINE *AFTER* LOADING
+                    placeImageAt(Plottr.ImgMoveX, Plottr.ImgMoveY); // Place image on canvas
                 }
             }
             catch (Exception ex)
             {
-                string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
-                MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                string msg = "Error loading image: " + ex.Message;
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Optionally transition back to a known safe state
+                // currentTransition = GUIActions.A2clear;
+                // handleGUIstates();
             }
         }
-
 
         private void btnHoldImg_Click(object sender, RoutedEventArgs e)
         {
@@ -222,42 +234,66 @@ namespace plottrBot
         //    }
         //}
 
-        private async void btnSliceImg_Click(object sender, RoutedEventArgs e)     //slices the image to individual lines that are either drawn or moved without drawing
+        private async void btnSliceImg_Click(object sender, RoutedEventArgs e)
         {
-            countCmdSent = 0;
+            if (myPlot == null || myPlot.Img == null)
+            {
+                MessageBox.Show("Please load a BMP image before slicing.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-            //read start and end gcode from text boxes
-            //Plottr.StartGCODE = "G1 Z1\n";
-            //Plottr.EndGCODE = txtEndGcode.Text + "\n";
-            //myPlot.GeneratedGCODE.Clear();
-            //canvasPreview.Children.Clear();
+            countCmdSent = 0; // Reset command counter for new slice
 
-            myPlot.Img.Freeze();        //bitmapimages needs to be frozen before they can be accessed by other threads
-            previewBMPSlice(myPlot);
+            try
+            {
+                // Freeze the image for cross-thread access
+                if (myPlot.Img.CanFreeze)
+                {
+                    myPlot.Img.Freeze();
+                }
+                else
+                {
+                    Console.WriteLine("Warning: Could not freeze bitmap image for slicing.");
+                }
 
-            sliderCmdCount.Maximum = myPlot.AllLines.Count - 1;
+                // Show loading indicator if needed
+                // progressIndicator.Visibility = Visibility.Visible;
 
-            txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
+                // Perform slicing and preview update
+                await previewBMPSlice(myPlot); // Contains Task.Run and Dispatcher.Invoke
 
-            //previewing GCODE text is nice for debugging but super slow
-            //foreach (string command in myPlot.GeneratedGCODE)
-            //{
-            //    txtOut.Text += command;     //prints the command to text output
-            //}
+                // Hide loading indicator
+                // progressIndicator.Visibility = Visibility.Collapsed;
 
-            //if (btnSend.IsEnabled)
-            //    enabledUIElements("both enable");
-            //btnBoundingBox.IsEnabled = true;
+                // Check if slicing was successful
+                if (myPlot.GeneratedGCODE == null || !myPlot.GeneratedGCODE.Any())
+                {
+                    MessageBox.Show("Image slicing failed or produced no GCODE.", "Slicing Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return; // Don't transition if slicing failed
+                }
 
-            currentTransition = GUIActions.A1bmpSlice;
-            handleGUIstates();
-            //currentTransition = GUITransitions.H1imgSlice;
-            //handleGUIstates();
+                // Update slider
+                sliderCmdCount.Maximum = myPlot.AllLines.Count > 0 ? myPlot.AllLines.Count - 1 : 0;
+                sliderCmdCount.Value = 0; // Reset slider
 
-            //SystemSounds.Exclamation.Play();
+                // Update output text
+                txtOut.Text = "GCODE commands = " + myPlot.GeneratedGCODE.Count + "\nNumber of lines = " + myPlot.AllLines.Count + "\n";
+
+                // Set the transition and update the state *AFTER* slicing completes
+                currentTransition = GUIActions.A1bmpSlice;
+                handleGUIstates();
+
+                SystemSounds.Beep.Play(); // Feedback
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during slicing: {ex.Message}", "Slicing Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Hide loading indicator if shown
+                // progressIndicator.Visibility = Visibility.Collapsed;
+            }
         }
 
-        private async void previewBMPSlice(PlottrBMP o)
+        private async Task previewBMPSlice(PlottrBMP o)
         {
             await Task.Run(() => o.GenerateGCODE());       //generates the GCODE to send to the robot
 
@@ -286,178 +322,407 @@ namespace plottrBot
             });
         }
 
-        private async void btnSendImg_Click(object sender, RoutedEventArgs e)       //send the whole sliced image to the robot over usb
+        private async void btnSendImg_Click(object sender, RoutedEventArgs e)
         {
+            if (port == null || !port.IsOpen)
+            {
+                MessageBox.Show("USB port is not connected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            List<string> gcodeToSend = null;
+            bool isBmp = false;
+            bool isSvg = false;
+            GUIStates targetDrawingState = GUIStates.S0blank; // Invalid initial state
+            GUIStates returnState = GUIStates.S0blank; // State to return to after drawing
+
+            // Determine GCODE source and target states based on current state
+            if ((currentState == GUIStates.S5bmpSlicedUsbConnected || currentState == GUIStates.S6bmpDrawing) && myPlot?.GeneratedGCODE != null && myPlot.GeneratedGCODE.Any())
+            {
+                gcodeToSend = myPlot.GeneratedGCODE;
+                isBmp = true;
+                targetDrawingState = GUIStates.S6bmpDrawing;
+                returnState = GUIStates.S5bmpSlicedUsbConnected;
+            }
+            else if ((currentState == GUIStates.S8svgLoadedUsbConnected || currentState == GUIStates.S9svgDrawing) && svgPlot?.GeneratedGCODE != null && svgPlot.GeneratedGCODE.Any())
+            {
+                gcodeToSend = svgPlot.GeneratedGCODE;
+                isSvg = true;
+                targetDrawingState = GUIStates.S9svgDrawing;
+                returnState = GUIStates.S8svgLoadedUsbConnected;
+            }
+
+            if (gcodeToSend == null)
+            {
+                MessageBox.Show("No valid GCODE available to send. Please load and process an image.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // --- Enter Drawing State ---
+            if (currentState != targetDrawingState) // Only transition if not already drawing
+            {
+                currentTransition = GUIActions.A5startDrawing;
+                handleGUIstates(); // Enter S6 or S9 state
+                                   // Short delay might be needed if state change has async UI updates
+                await Task.Delay(50);
+            }
+
+            // Disable potentially problematic controls during send loop (optional, state machine might cover this)
+            // btnSelectImg.IsEnabled = false; btnSliceImg.IsEnabled = false;
+
+            bool drawingCompletedSuccessfully = true;
+            bool wasPaused = false;
+
             try
             {
-                if (Plottr.Filename.EndsWith(".bmp"))
+                // Send initial speed command only if starting from the beginning (countCmdSent == 0)
+                if (countCmdSent == 0)
                 {
-                    currentTransition = GUIActions.A5startDrawing;
-                    handleGUIstates();
-                    //currentTransition = GUITransitions.H5startDrawing;
-                    //handleGUIstates();
-                    bool timedOut = await sendSerialStringAsync("M220 S150\n");
-                    txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, myPlot.GeneratedGCODE.Count);
-                    //countCmdSent = 0 is set when an image is sliced
-                    //countCmdSent = 400;
-                    for (; countCmdSent < myPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                    bool timedOutSpeed = await sendSerialStringAsync(isBmp ? "M220 S150\n" : "M220 S50\n"); // Example speeds
+                    if (timedOutSpeed) throw new TimeoutException("Timeout setting initial speed.");
+                }
+
+                txtOut.AppendText($"Drawing {(isBmp ? "BMP" : "SVG")} image. Starting/Resuming at command {countCmdSent + 1} of {gcodeToSend.Count}\n");
+
+                // --- GCODE Sending Loop ---
+                int loopCounter = countCmdSent; // Use local counter for the loop
+                for (; loopCounter < gcodeToSend.Count; loopCounter++)
+                {
+                    // Check for pause request (by checking button text)
+                    if (btnPauseDrawing.Content.ToString().Contains("Continue"))
                     {
-                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
-                            break;
+                        txtOut.AppendText($"Drawing paused at command {loopCounter}.\n"); // Paused BEFORE sending this command
+                        drawingCompletedSuccessfully = false;
+                        wasPaused = true;
+                        countCmdSent = loopCounter; // Store the next command index to resume from
+                        break; // Exit the loop
+                    }
 
-                        string[] getLineNo = myPlot.GeneratedGCODE[countCmdSent].Split('L');
-                        if (int.TryParse(getLineNo[getLineNo.Count() - 1], out int lineNo))     //shows on slider the current line (not command) being drawn
-                            sliderCmdCount.Value = lineNo;
-
-                        timedOut = await sendSerialStringAsync(myPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
-                        if (timedOut)
+                    // Update slider if drawing BMP
+                    if (isBmp)
+                    {
+                        string[] getLineNo = gcodeToSend[loopCounter].Split('L');
+                        if (getLineNo.Length > 1 && int.TryParse(getLineNo.Last(), out int lineNo))
                         {
-                            txtOut.Text += "Timed out\n";
-                            //break;      //exits the for loop
+                            Dispatcher.Invoke(() => {
+                                if (lineNo >= 0 && lineNo <= sliderCmdCount.Maximum) { sliderCmdCount.Value = lineNo; }
+                            });
                         }
-
-                        //countCmdSent = i;        //increment number of commands sent
                     }
-                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
-                }
-                //else if(loadedImgType == imgType.svg)
-                //{
-                //    currentTransition = GUIActions.A5startDrawing;
-                //    handleGUIstates();
 
-                //    bool timedOut = await sendSerialStringAsync("M220 S50\n");
-                //    countCmdSent = 0;
-                //    //if pause
-                //    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
-                //    {
-                //        txtOut.Text += "Timed out\n";
-                //        //break;      //exits the for loop
-                //    }
-                //    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
-                //}
-                //else if(currentState == GUIStates.S8svgLoadedUsbConnected)
-                else if (Plottr.Filename.EndsWith(".svg"))
-                {
-                    bool timedOut = await sendSerialStringAsync("M220 S50\n");
-                    countCmdSent = 0;
-                    //if pause
-                    txtOut.Text += String.Format("Drawing image. Starting at command {0} of {1}\n", countCmdSent, svgPlot.GeneratedGCODE.Count);
-                    for (; countCmdSent < svgPlot.GeneratedGCODE.Count; countCmdSent++)       //for loop instead of for each gives the possibility to start at a specific command
+                    // Send the command
+                    bool timedOutCmd = await sendSerialStringAsync(gcodeToSend[loopCounter]);
+                    if (timedOutCmd)
                     {
-                        currentTransition = GUIActions.A5startDrawing;
-                        handleGUIstates();
-                        //currentTransition = GUITransitions.H5startDrawing;
-                        //handleGUIstates();
-                        if (btnPauseDrawing.Content.ToString().Contains("Continue"))
-                            break;
-
-                        timedOut = await sendSerialStringAsync(svgPlot.GeneratedGCODE[countCmdSent]);     //sends the gcode over usb to the robot
-                        if (timedOut)
-                            txtOut.Text += "Timed out\n";
-                        //countCmdSent = i;        //increment number of commands sent
+                        throw new TimeoutException($"Timeout sending command {loopCounter + 1}: {gcodeToSend[loopCounter].Trim()}");
                     }
-                    txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";
+
+                    // Update the main command counter *after* successful send
+                    // countCmdSent = loopCounter + 1; // Point to the *next* command index (Changed logic: update after loop or on pause)
+
+                    // Optional delay
+                    // await Task.Delay(5);
+                } // --- End GCODE Sending Loop ---
+
+
+                // --- Handle Loop Completion ---
+                if (loopCounter == gcodeToSend.Count && !wasPaused) // Loop finished naturally
+                {
+                    txtOut.AppendText($"Finished sending {loopCounter} commands.\n");
+                    countCmdSent = 0; // Reset for next run
+                    drawingCompletedSuccessfully = true;
+                    // Optional: Send final commands
+                    // await sendSerialStringAsync("G1 Z1\n"); // Pen up
+                    // await sendSerialStringAsync("G28\n"); // Home
                 }
-                
+                else if (wasPaused)
+                {
+                    // loopCounter holds the index of the command *not* sent due to pause
+                    countCmdSent = loopCounter; // Ensure countCmdSent points to the paused command
+                }
+                else
+                {
+                    // Should not happen unless loop breaks unexpectedly
+                    countCmdSent = loopCounter;
+                    drawingCompletedSuccessfully = false;
+                }
+
             }
             catch (Exception ex)
             {
-                string msg = "Commands successfully sent = " + countCmdSent + "\n" + ex.Message;
-                MessageBox.Show(msg, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                drawingCompletedSuccessfully = false;
+                countCmdSent = Math.Max(0, countCmdSent); // Ensure it's not negative on error
+                string msg = $"Error during drawing at command {countCmdSent + 1}.\nCommands sent: {countCmdSent}\nError: {ex.Message}";
+                MessageBox.Show(msg, "Drawing Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                try { await sendSerialStringAsync("G1 Z1\n"); } catch { /* Ignore error trying to lift pen */ } // Attempt safe stop
+            }
+            finally
+            {
+                // --- Exit Drawing State ---
+                // Only transition back if the loop wasn't paused (pause button handles its own state)
+                // Or if an error occurred
+                if (!wasPaused || !drawingCompletedSuccessfully)
+                {
+                    currentTransition = GUIActions.A5startDrawing; // Use A5 to signify "drawing ended/interrupted"
+                    handleGUIstates(); // Exit S6/S9 state -> back to S5/S8 (or relevant error state if defined)
+                }
+
+                // Re-enable manually disabled controls if any
+                // btnSelectImg.IsEnabled = true;
             }
         }
-        private async void btnSend_Click(object sender, RoutedEventArgs e)        //send cmd
+        private async void btnSend_Click(object sender, RoutedEventArgs e)
         {
-            bool timedOut = await sendSerialStringAsync(txtSerialCmd.Text + "\n");
+            if (port == null || !port.IsOpen)
+            {
+                MessageBox.Show("USB port is not connected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(txtSerialCmd.Text))
+            {
+                return; // Don't send empty commands
+            }
+
+            string commandToSend = txtSerialCmd.Text.Trim() + "\n";
+            txtOut.AppendText($">> {commandToSend.Trim()}\n"); // Log command being sent
+
+            bool timedOut = await sendSerialStringAsync(commandToSend);
+
             if (timedOut)
-                txtOut.Text += "Timed out\n";
+            {
+                txtOut.AppendText("Timeout sending manual command.\n");
+            }
+            else
+            {
+                // Response is logged within sendSerialStringAsync now
+                // txtOut.AppendText($"<< Response received (or OK)\n");
+            }
+            txtSerialCmd.Clear(); // Clear input box after sending
+            txtSerialCmd.Focus(); // Set focus back to input box
         }
 
         private void txtSerialCmd_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
+            {
                 btnSend_Click(sender, e);
+                e.Handled = true; // Prevent further processing of the return key (like beeping)
+            }
         }
 
         private async Task<bool> sendSerialStringAsync(string message)
         {
+            bool timedOut = false;
+            if (port == null || !port.IsOpen)
+            {
+                txtOut.Dispatcher.Invoke(() => txtOut.AppendText("Error: Port not open. Cannot send command.\n"));
+                return true; // Indicate failure/timeout scenario
+            }
+
             try
             {
-                bool result = await Task.Run(() => 
+                // Consider clearing buffers depending on device behavior
+                // port.DiscardInBuffer();
+                // port.DiscardOutBuffer();
+
+                // Write the command
+                await port.BaseStream.WriteAsync(Encoding.ASCII.GetBytes(message), 0, message.Length);
+                await port.BaseStream.FlushAsync(); // Ensure data is sent
+
+                // Log sent message (optional, can be verbose)
+                // Console.WriteLine($"Sent: {message.Trim()}");
+
+                // --- Wait for response ("ok" or "GO") ---
+                // Use a configurable timeout (e.g., 60 seconds for potentially long moves)
+                // Shorter timeout for simple commands? Needs context.
+                double timeoutMilliseconds = 60000; // 60 seconds - Adjust as needed!
+                var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+                string lineBuffer = "";
+
+                try
                 {
-                    bool timedOut = false;
-                    if (port.IsOpen)
+                    while (!cts.IsCancellationRequested)
                     {
-                        port.Write(message);       //sends the current command over usb
+                        byte[] buffer = new byte[1024];
+                        int bytesRead = await port.BaseStream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
 
-                        //wait for GO from arduino
-                        double WaitTimeout = (60 * 1000) + DateTime.Now.TimeOfDay.TotalMilliseconds;      //timeout is 20 seconds
-
-                        string incoming = "";
-                        while (!incoming.Contains("GO"))
+                        if (bytesRead > 0)
                         {
-                            if (port.BytesToRead > 0)
-                                incoming = port.ReadLine();     //reads the reply from arduino
-                            if ((DateTime.Now.TimeOfDay.TotalMilliseconds >= WaitTimeout))      //if the time elapsed is larger than the timeout
+                            string incoming = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                            lineBuffer += incoming;
+                            // Log raw incoming data to UI (ensure thread safety)
+                            txtOut.Dispatcher.Invoke(() => txtOut.AppendText(incoming));
+
+                            // Process complete lines
+                            int lineEndIndex;
+                            while ((lineEndIndex = lineBuffer.IndexOf('\n')) != -1)
                             {
-                                timedOut = true;        //flag timeout event
-                                break;    
+                                string line = lineBuffer.Substring(0, lineEndIndex).Trim(); // Includes trimming \r
+                                lineBuffer = lineBuffer.Substring(lineEndIndex + 1);
+
+                                // Check for expected success response
+                                if (line.Equals("ok", StringComparison.OrdinalIgnoreCase) || line.Equals("GO", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Console.WriteLine($"Received expected response: {line}");
+                                    return false; // Success, not timed out
+                                }
+
+                                // Check for known error responses
+                                if (line.StartsWith("error:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"DEVICE ERROR: {line}\n"));
+                                    // Consider this a failure, maybe return true or throw specific exception
+                                    // return true;
+                                }
+                                // Log other lines if needed
+                                // else if (!string.IsNullOrWhiteSpace(line)) { Console.WriteLine($"Other response: {line}"); }
                             }
                         }
+                        else
+                        {
+                            // ReadAsync returning 0 usually means end of stream/closed port
+                            throw new IOException("Serial port closed unexpectedly while waiting for response.");
+                        }
                     }
-                    return timedOut;
-                });
+                }
+                catch (OperationCanceledException) // Catches cancellation from CancellationTokenSource (timeout)
+                {
+                    timedOut = true;
+                    txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"Timeout waiting for 'ok'/'GO' after sending: {message.Trim()}\n"));
+                }
 
-                if(result)
-                    throw new Exception("Timed out. Recheck USB connection.");
-                return result;
+
+                // If loop/try finishes without returning false, it means timeout or cancellation
+                return timedOut;
+
             }
-            catch (Exception ex)
+            catch (TimeoutException tex) // Catch specific write/read timeouts if configured on port
             {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return true;
+                txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"Serial Timeout Exception: {tex.Message}\n"));
+                return true; // Indicate timeout
             }
-
+            catch (IOException ioex) // Catch port closed errors, etc.
+            {
+                txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"Serial IO Exception: {ioex.Message}. Port may be closed.\n"));
+                // Attempt to close port and update state if an IO error occurs
+                if (port != null && port.IsOpen) { try { port.Close(); } catch { } }
+                Dispatcher.Invoke(() => {
+                    currentTransition = GUIActions.A6usbClose;
+                    handleGUIstates();
+                });
+                return true; // Indicate failure
+            }
+            catch (InvalidOperationException ioex) // Catch errors like port not open
+            {
+                txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"Serial Operation Exception: {ioex.Message}. Port may not be open.\n"));
+                if (port != null && port.IsOpen) { try { port.Close(); } catch { } }
+                Dispatcher.Invoke(() => {
+                    currentTransition = GUIActions.A6usbClose;
+                    handleGUIstates();
+                });
+                return true; // Indicate failure
+            }
+            catch (Exception ex) // Catch other unexpected errors
+            {
+                txtOut.Dispatcher.Invoke(() => txtOut.AppendText($"Serial Communication Error: {ex.Message}\n"));
+                return true; // Indicate failure
+            }
         }
 
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if(port != null && port.IsOpen)
+                if (port != null && port.IsOpen) // Disconnecting
                 {
                     port.Close();
-                    btnConnect.Content = "Connect USB";
-                    currentTransition = GUIActions.A6usbClose;
-                    handleGUIstates();
-                    //currentTransition = GUITransitions.H4usbClose;
-                    //handleGUIstates();
+                    currentTransition = GUIActions.A6usbClose; // Set transition cause
+                    handleGUIstates(); // Update state machine AFTER action
                 }
-                else
+                else // Connecting
                 {
-                    port.PortName = comArray[comboBoxCOM.SelectedIndex];
+                    // Validate COM port selection
+                    if (comboBoxCOM.SelectedIndex == -1 || comArray == null || comArray.Length == 0 || comboBoxCOM.SelectedItem.ToString() == "No COM ports found")
+                    {
+                        MessageBox.Show("Please select an available COM port from the dropdown before connecting.", "USB Connection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Verify selected port still exists
+                    string selectedPortName = comArray[comboBoxCOM.SelectedIndex];
+                    string[] currentPorts = SerialPort.GetPortNames();
+                    if (!currentPorts.Contains(selectedPortName))
+                    {
+                        MessageBox.Show($"Selected COM port '{selectedPortName}' is no longer available. Please refresh the list.", "USB Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        comboBoxCOM.ItemsSource = currentPorts.Length > 0 ? currentPorts : new string[] { "No COM ports found" };
+                        comboBoxCOM.SelectedIndex = -1;
+                        comArray = currentPorts; // Update internal array
+                        return;
+                    }
+
+                    // Configure and open port
+                    port.PortName = selectedPortName;
                     port.BaudRate = 9600;
                     port.Parity = Parity.None;
                     port.DataBits = 8;
                     port.StopBits = StopBits.One;
+                    // Consider adding timeouts
+                    // port.ReadTimeout = 2000; // 2 seconds
+                    // port.WriteTimeout = 2000;
                     port.Open();
-                    btnConnect.Content = "Disconnect";
-                    currentTransition = GUIActions.A4usbOpen;
-                    handleGUIstates();
-                    //currentTransition = GUITransitions.H3usbOpen;     
-                    //handleGUIstates();
+
+                    Thread.Sleep(100); // Brief pause for device initialization
+
+                    currentTransition = GUIActions.A4usbOpen; // Set transition cause
+                    handleGUIstates(); // Update state machine AFTER action
                 }
+            }
+            catch (UnauthorizedAccessException uaEx)
+            {
+                MessageBox.Show($"Access denied to COM port '{port?.PortName}'. It might be in use by another application.\n\n{uaEx.Message}", "USB Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (port != null && port.IsOpen) port.Close(); // Ensure closed
+                currentTransition = GUIActions.A6usbClose; // Ensure state reflects closed port
+                handleGUIstates();
+            }
+            catch (IOException ioEx)
+            {
+                MessageBox.Show($"IO Error connecting to COM port '{port?.PortName}'. Check device connection and drivers.\n\n{ioEx.Message}", "USB Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (port != null && port.IsOpen) port.Close(); // Ensure closed
+                currentTransition = GUIActions.A6usbClose; // Ensure state reflects closed port
+                handleGUIstates();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                MessageBox.Show($"Failed to connect/disconnect USB.\n{ex.Message}", "USB Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                if (port != null && port.IsOpen) port.Close(); // Ensure closed
+                currentTransition = GUIActions.A6usbClose; // Ensure state reflects closed port
+                handleGUIstates();
             }
         }
 
+
         private void comboBoxCOM_DropDownOpened(object sender, EventArgs e)
         {
+            string previouslySelected = comboBoxCOM.SelectedItem as string;
             comArray = SerialPort.GetPortNames();
-            comboBoxCOM.ItemsSource = comArray;
+            if (comArray.Length == 0)
+            {
+                comboBoxCOM.ItemsSource = new string[] { "No COM ports found" };
+                comboBoxCOM.SelectedIndex = 0; // Show the message
+            }
+            else
+            {
+                comboBoxCOM.ItemsSource = comArray;
+                // Try to re-select the previously selected port if it still exists
+                if (previouslySelected != null && comArray.Contains(previouslySelected))
+                {
+                    comboBoxCOM.SelectedItem = previouslySelected;
+                }
+                else if (comArray.Length > 0)
+                {
+                    comboBoxCOM.SelectedIndex = 0; // Select the first available port by default
+                }
+            }
         }
 
         private void btnMoveImg_Click(object sender, RoutedEventArgs e)
@@ -586,33 +851,103 @@ namespace plottrBot
             }
         }
 
-        
+
 
         private void btnPauseDrawing_Click(object sender, RoutedEventArgs e)
         {
-            if(btnPauseDrawing.Content.ToString().Contains("Pause"))
+            // Only functional if connected and in a drawing state
+            if (port == null || !port.IsOpen || (currentState != GUIStates.S6bmpDrawing && currentState != GUIStates.S9svgDrawing))
             {
-                btnPauseDrawing.Content = "Continue drawing";
-                txtOut.Text += "Commands successfully sent = " + countCmdSent + "\n";       //mismatch between this countCmdSent and the one used in btnCmdStart_Click
+                // Silently ignore or show a message if clicked inappropriately
+                // MessageBox.Show("Not currently drawing.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
-            else
+
+            if (btnPauseDrawing.Content.ToString().Contains("Pause"))
             {
+                // --- Request Pause ---
+                // Set button text immediately for visual feedback.
+                // The send loop (`btnSendImg_Click`) checks this text to stop sending.
+                btnPauseDrawing.Content = "Continue drawing";
+                // Optionally send Feed Hold ('!') if firmware supports it
+                // try { port.Write("!"); } catch (Exception ex) { Console.WriteLine($"Error sending feed hold: {ex.Message}"); }
+                txtOut.AppendText("Pause requested. Sending will stop after current command.\n");
+                // DO NOT change state here. The send loop breaking will handle the state return.
+            }
+            else // Contains "Continue"
+            {
+                // --- Request Continue ---
+                // Set button text back.
                 btnPauseDrawing.Content = "Pause drawing";
+                txtOut.AppendText("Resuming drawing...\n");
+                // Optionally send Cycle Start ('~') if firmware supports it
+                // try { port.Write("~"); } catch (Exception ex) { Console.WriteLine($"Error sending cycle start: {ex.Message}"); }
+
+                // Re-call the send function. It will pick up from `countCmdSent`.
+                // It will also handle transitioning back into the drawing state if needed (though it should already be in it).
                 btnSendImg_Click(sender, e);
             }
         }
 
+
         private void btnCmdStart_Click(object sender, RoutedEventArgs e)
         {
+            if (myPlot == null || myPlot.AllLines == null || !myPlot.AllLines.Any() || myPlot.GeneratedGCODE == null || !myPlot.GeneratedGCODE.Any())
+            {
+                // CORRECTED: Added MessageBoxButton.OK
+                MessageBox.Show("No sliced BMP data available to start from.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (currentState != GUIStates.S5bmpSlicedUsbConnected) // Can only start if sliced and connected
+            {
+                // CORRECTED: Added MessageBoxButton.OK
+                MessageBox.Show("Please ensure USB is connected and BMP image is sliced.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             try
             {
-                int cmdNo = Convert.ToInt32(txtCmdStart.Text);
-                countCmdSent = myPlot.GeneratedGCODE.IndexOf(string.Format("G1 X{0} Y{1}\n", myPlot.AllLines[cmdNo].X1, myPlot.AllLines[cmdNo].Y1));
+                int lineNo = Convert.ToInt32(txtCmdStart.Text); // This is the desired LINE number
+
+                // Validate line number against AllLines
+                if (lineNo < 0 || lineNo >= myPlot.AllLines.Count)
+                {
+                    // CORRECTED: Added MessageBoxButton.OK
+                    MessageBox.Show($"Line number {lineNo} is out of range (0 to {myPlot.AllLines.Count - 1}).", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // --- Calculate the corresponding GCODE command index ---
+                int calculatedIndex = 1 + (lineNo * 2); // Assumes 1 start command, 2 commands per line.
+
+                // Validate calculated index against GCODE list bounds
+                if (calculatedIndex < 0 || calculatedIndex >= myPlot.GeneratedGCODE.Count)
+                {
+                    // CORRECTED: Added MessageBoxButton.OK
+                    MessageBox.Show($"Calculated starting GCODE command index ({calculatedIndex}) is out of range for the generated GCODE list ({myPlot.GeneratedGCODE.Count} commands). Check slicing logic.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Set the starting command index
+                countCmdSent = calculatedIndex;
+
+                txtOut.AppendText($"Set start to Line {lineNo} (GCODE command {countCmdSent + 1})\n");
+
+                // Update slider to reflect the chosen start line
+                sliderCmdCount.Value = lineNo;
+
+                // Call the main send function to start drawing from this point
                 btnSendImg_Click(sender, e);
+            }
+            catch (FormatException)
+            {
+                // CORRECTED: Added MessageBoxButton.OK
+                MessageBox.Show("Invalid line number. Please enter a number.", "Input Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Info", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                // CORRECTED: Added MessageBoxButton.OK
+                MessageBox.Show($"Error setting start command: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -648,36 +983,73 @@ namespace plottrBot
 
         private void sliderCmdCount_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            txtCmdStart.Text = ((int)sliderCmdCount.Value).ToString();
+            // Only update if BMP plot and lines exist (slider is only relevant for BMP)
+            if (myPlot == null || myPlot.AllLines == null || !myPlot.AllLines.Any())
+            {
+                canvasPreview.Children.Remove(selectedPreviewLine); // Ensure highlight is removed if data disappears
+                return;
+            }
 
-            canvasPreview.Children.Remove(selectedPreviewLine);
+            int lineIndex = (int)e.NewValue;
+
+            // Validate index before accessing AllLines
+            if (lineIndex < 0 || lineIndex >= myPlot.AllLines.Count)
+            {
+                // Value might be temporarily out of range during Maximum update, ignore.
+                // Or reset text if persistently invalid?
+                // txtCmdStart.Text = "";
+                canvasPreview.Children.Remove(selectedPreviewLine); // Remove highlight if index invalid
+                return;
+            }
+
+            // Update the text box linked to the slider
+            txtCmdStart.Text = lineIndex.ToString();
+
+            // Highlight the selected line on the preview canvas
+            canvasPreview.Children.Remove(selectedPreviewLine); // Remove previous highlight
+
             selectedPreviewLine.Stroke = System.Windows.Media.Brushes.Red;
             selectedPreviewLine.StrokeThickness = 2;
-            selectedPreviewLine.X1 = myPlot.AllLines[(int)sliderCmdCount.Value].X0 * scaleToPreview;
-            selectedPreviewLine.Y1 = myPlot.AllLines[(int)sliderCmdCount.Value].Y0 * scaleToPreview;
-            selectedPreviewLine.X2 = myPlot.AllLines[(int)sliderCmdCount.Value].X1 * scaleToPreview;
-            selectedPreviewLine.Y2 = myPlot.AllLines[(int)sliderCmdCount.Value].Y1 * scaleToPreview;
-            canvasPreview.Children.Add(selectedPreviewLine);
+            selectedPreviewLine.X1 = myPlot.AllLines[lineIndex].X0 * scaleToPreview;
+            selectedPreviewLine.Y1 = myPlot.AllLines[lineIndex].Y0 * scaleToPreview;
+            selectedPreviewLine.X2 = myPlot.AllLines[lineIndex].X1 * scaleToPreview;
+            selectedPreviewLine.Y2 = myPlot.AllLines[lineIndex].Y1 * scaleToPreview;
+
+            canvasPreview.Children.Add(selectedPreviewLine); // Add new highlight
         }
 
 
         private void btnClearImg_Click(object sender, RoutedEventArgs e)
         {
-            clearEverything();
-            currentTransition = GUIActions.A2clear;
-            handleGUIstates();
-            //currentTransition = GUITransitions.H2imgClear;
-            //handleGUIstates();
-        } 
+            clearEverything(); // Perform the clear action first
+            currentTransition = GUIActions.A2clear; // Set the transition cause
+            handleGUIstates(); // Update the state machine AFTER action
+        }
 
         private void clearEverything()
         {
             myPlot = null;
             svgPlot = null;
-            canvasPreview.Children.Clear();     //removes previous images/elements from the canvas
+            retentionImage = null; // Also clear retention image
+            Plottr.Filename = null; // Clear filename
+            canvasPreview.Children.Clear();
             canvasPreview.Background = System.Windows.Media.Brushes.White;
-            //currentTransition = GUITransitions.H2imgClear;
-            //handleGUIstates();
+            txtOut.AppendText("Cleared current image and GCODE.\n");
+
+            // Reset relevant UI elements not covered by state machine enable/disable
+            txtDpi.Text = "";
+            txtMoveX.Text = "0";
+            txtMoveY.Text = "0";
+            if (sliderCmdCount.IsEnabled) // Only change if enabled (might be disabled in S0)
+            {
+                sliderCmdCount.Value = 0;
+                sliderCmdCount.Maximum = 0;
+            }
+            txtCmdStart.Text = "0";
+            btnHoldImg.Content = "Hold image"; // Reset hold button text
+
+            // The state transition (A2clear) should be set *before* calling this method,
+            // and handleGUIstates() called *after* this method finishes.
         }
 
         private void btnSliderIncDec(object sender, RoutedEventArgs e)      //increases or decreases the slider by one based on button press
@@ -884,463 +1256,241 @@ namespace plottrBot
         }
 
 
-
-        private void disableAllGUIelements()
+        private Dictionary<(GUIStates, GUIActions), GUIStates> InitializeStateTransitions()
         {
-            txtMoveX.IsEnabled = false;
-            txtMoveY.IsEnabled = false;
-            btnMoveImg.IsEnabled = false;
-            btnCenterImg.IsEnabled = false;
-            btnClearImg.IsEnabled = false;
-            btnSliceImg.IsEnabled = false;
-
-            btnBoundingBox.IsEnabled = false;
-            btnPauseDrawing.IsEnabled = false;
-            btnSendImg.IsEnabled = false;
-            btnCmdStart.IsEnabled = false;
-
-            sliderCmdCount.IsEnabled = false;
-            btnSliderDecrease.IsEnabled = false;
-            btnSliderIncrease.IsEnabled = false;
-
-            txtSerialCmd.IsEnabled = false;
-            btnSend.IsEnabled = false;
-            btnEnableStepper.IsEnabled = false;
-            btnDisableStepper.IsEnabled = false;
-            btnPenTouchCanvas.IsEnabled = false;
-            btnNoPenTouchCanvas.IsEnabled = false;
-            btnHomePosition.IsEnabled = false;
-        }
-
-        private void updateGUIelements()
-        {
-            disableAllGUIelements();
-            switch (currentState)
+            // NOTE: This dictionary now contains ALL transitions from the original logic
+            return new Dictionary<(GUIStates, GUIActions), GUIStates>
             {
-                case GUIStates.S0blank:
-                    break;
-                case GUIStates.S1bmpLoaded:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnSliceImg.IsEnabled = true;
-                    break;
-                case GUIStates.S2bmpSliced:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnSliceImg.IsEnabled = true;
-                    sliderCmdCount.IsEnabled = true;
-                    btnSliderDecrease.IsEnabled = true;
-                    btnSliderIncrease.IsEnabled = true;
-                    break;
-                case GUIStates.S3usbConnected:
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                case GUIStates.S4bmpLoadedUsbConnected:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnSliceImg.IsEnabled = true;
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                case GUIStates.S5bmpSlicedUsbConnected:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnSliceImg.IsEnabled = true;
-                    btnBoundingBox.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
-                    btnSendImg.IsEnabled = true;
-                    btnCmdStart.IsEnabled = true;
-                    sliderCmdCount.IsEnabled = true;
-                    btnSliderDecrease.IsEnabled = true;
-                    btnSliderIncrease.IsEnabled = true;
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                case GUIStates.S6bmpDrawing:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnSliceImg.IsEnabled = true;
-                    btnBoundingBox.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
-                    btnSendImg.IsEnabled = true;
-                    btnCmdStart.IsEnabled = true;
-                    sliderCmdCount.IsEnabled = true;
-                    btnSliderDecrease.IsEnabled = true;
-                    btnSliderIncrease.IsEnabled = true;
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                case GUIStates.S7svgLoaded:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    break;
-                case GUIStates.S8svgLoadedUsbConnected:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
-                    btnSendImg.IsEnabled = true;
-                    btnCmdStart.IsEnabled = true;
-                    sliderCmdCount.IsEnabled = true;
-                    btnSliderDecrease.IsEnabled = true;
-                    btnSliderIncrease.IsEnabled = true;
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                case GUIStates.S9svgDrawing:
-                    txtMoveX.IsEnabled = true;
-                    txtMoveY.IsEnabled = true;
-                    btnMoveImg.IsEnabled = true;
-                    btnCenterImg.IsEnabled = true;
-                    btnClearImg.IsEnabled = true;
-                    btnPauseDrawing.IsEnabled = true;
-                    btnSendImg.IsEnabled = true;
-                    btnCmdStart.IsEnabled = true;
-                    sliderCmdCount.IsEnabled = true;
-                    btnSliderDecrease.IsEnabled = true;
-                    btnSliderIncrease.IsEnabled = true;
-                    txtSerialCmd.IsEnabled = true;
-                    btnSend.IsEnabled = true;
-                    btnEnableStepper.IsEnabled = true;
-                    btnDisableStepper.IsEnabled = true;
-                    btnPenTouchCanvas.IsEnabled = true;
-                    btnNoPenTouchCanvas.IsEnabled = true;
-                    btnHomePosition.IsEnabled = true;
-                    break;
-                default:
-                    break;
-            }
+                // S0blank Transitions
+                {(GUIStates.S0blank, GUIActions.A0bmpOpen), GUIStates.S1bmpLoaded},
+                {(GUIStates.S0blank, GUIActions.A3svgOpen), GUIStates.S7svgLoaded},
+                {(GUIStates.S0blank, GUIActions.A4usbOpen), GUIStates.S3usbConnected},
+
+                // S1bmpLoaded Transitions
+                {(GUIStates.S1bmpLoaded, GUIActions.A0bmpOpen), GUIStates.S1bmpLoaded}, // Reload BMP
+                {(GUIStates.S1bmpLoaded, GUIActions.A1bmpSlice), GUIStates.S2bmpSliced},
+                {(GUIStates.S1bmpLoaded, GUIActions.A2clear), GUIStates.S0blank},
+                {(GUIStates.S1bmpLoaded, GUIActions.A3svgOpen), GUIStates.S7svgLoaded}, // Switch to SVG
+                {(GUIStates.S1bmpLoaded, GUIActions.A4usbOpen), GUIStates.S4bmpLoadedUsbConnected},
+
+                // S2bmpSliced Transitions
+                {(GUIStates.S2bmpSliced, GUIActions.A0bmpOpen), GUIStates.S1bmpLoaded}, // Load new BMP, discard slice
+                {(GUIStates.S2bmpSliced, GUIActions.A1bmpSlice), GUIStates.S2bmpSliced}, // Reslice
+                {(GUIStates.S2bmpSliced, GUIActions.A2clear), GUIStates.S0blank},
+                {(GUIStates.S2bmpSliced, GUIActions.A3svgOpen), GUIStates.S7svgLoaded}, // Switch to SVG
+                {(GUIStates.S2bmpSliced, GUIActions.A4usbOpen), GUIStates.S5bmpSlicedUsbConnected},
+
+                // S3usbConnected Transitions
+                {(GUIStates.S3usbConnected, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected},
+                {(GUIStates.S3usbConnected, GUIActions.A2clear), GUIStates.S3usbConnected}, // Clear image while USB connected
+                {(GUIStates.S3usbConnected, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected},
+                //{(GUIStates.S3usbConnected, GUIActions.A4usbOpen), GUIStates.S3usbConnected}, // Reconnecting USB? Original code had this, seems redundant if already connected.
+                {(GUIStates.S3usbConnected, GUIActions.A6usbClose), GUIStates.S0blank},
+
+                // S4bmpLoadedUsbConnected Transitions
+                {(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected}, // Reload BMP
+                {(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A1bmpSlice), GUIStates.S5bmpSlicedUsbConnected},
+                {(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A2clear), GUIStates.S3usbConnected}, // Clear image
+                {(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected}, // Switch to SVG
+                //{(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A4usbOpen), GUIStates.S4bmpLoadedUsbConnected}, // Reconnecting USB? Original code had this.
+                {(GUIStates.S4bmpLoadedUsbConnected, GUIActions.A6usbClose), GUIStates.S1bmpLoaded}, // Disconnect USB
+
+                // S5bmpSlicedUsbConnected Transitions
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected}, // Load new BMP, discard slice
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A1bmpSlice), GUIStates.S5bmpSlicedUsbConnected}, // Reslice
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A2clear), GUIStates.S3usbConnected}, // Clear image
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected}, // Switch to SVG
+                //{(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A4usbOpen), GUIStates.S5bmpSlicedUsbConnected}, // Reconnecting USB? Original code had this.
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A5startDrawing), GUIStates.S6bmpDrawing},
+                {(GUIStates.S5bmpSlicedUsbConnected, GUIActions.A6usbClose), GUIStates.S2bmpSliced}, // Disconnect USB
+
+                // S6bmpDrawing Transitions (Actions possible *while* drawing)
+                {(GUIStates.S6bmpDrawing, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected}, // Stop drawing, load new BMP
+                {(GUIStates.S6bmpDrawing, GUIActions.A2clear), GUIStates.S3usbConnected}, // Stop drawing, clear
+                {(GUIStates.S6bmpDrawing, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected}, // Stop drawing, load SVG
+                {(GUIStates.S6bmpDrawing, GUIActions.A5startDrawing), GUIStates.S5bmpSlicedUsbConnected}, // Drawing finished or paused -> return to sliced+connected state
+                {(GUIStates.S6bmpDrawing, GUIActions.A6usbClose), GUIStates.S2bmpSliced}, // Stop drawing, disconnect USB
+
+                // S7svgLoaded Transitions
+                {(GUIStates.S7svgLoaded, GUIActions.A0bmpOpen), GUIStates.S1bmpLoaded}, // Switch to BMP
+                {(GUIStates.S7svgLoaded, GUIActions.A2clear), GUIStates.S0blank},
+                {(GUIStates.S7svgLoaded, GUIActions.A3svgOpen), GUIStates.S7svgLoaded}, // Reload SVG
+                {(GUIStates.S7svgLoaded, GUIActions.A4usbOpen), GUIStates.S8svgLoadedUsbConnected},
+
+                // S8svgLoadedUsbConnected Transitions
+                {(GUIStates.S8svgLoadedUsbConnected, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected}, // Switch to BMP
+                {(GUIStates.S8svgLoadedUsbConnected, GUIActions.A2clear), GUIStates.S3usbConnected}, // Clear image
+                {(GUIStates.S8svgLoadedUsbConnected, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected}, // Reload SVG
+                //{(GUIStates.S8svgLoadedUsbConnected, GUIActions.A4usbOpen), GUIStates.S8svgLoadedUsbConnected}, // Reconnecting USB? Original code had this.
+                {(GUIStates.S8svgLoadedUsbConnected, GUIActions.A5startDrawing), GUIStates.S9svgDrawing},
+                {(GUIStates.S8svgLoadedUsbConnected, GUIActions.A6usbClose), GUIStates.S7svgLoaded}, // Disconnect USB
+
+                // S9svgDrawing Transitions (Actions possible *while* drawing)
+                {(GUIStates.S9svgDrawing, GUIActions.A0bmpOpen), GUIStates.S4bmpLoadedUsbConnected}, // Stop drawing, load BMP
+                {(GUIStates.S9svgDrawing, GUIActions.A2clear), GUIStates.S3usbConnected}, // Stop drawing, clear
+                {(GUIStates.S9svgDrawing, GUIActions.A3svgOpen), GUIStates.S8svgLoadedUsbConnected}, // Stop drawing, reload SVG
+                {(GUIStates.S9svgDrawing, GUIActions.A5startDrawing), GUIStates.S8svgLoadedUsbConnected}, // Drawing finished or paused -> return to loaded+connected state
+                {(GUIStates.S9svgDrawing, GUIActions.A6usbClose), GUIStates.S7svgLoaded} // Stop drawing, disconnect USB
+            };
         }
+
+        // ================================================================
+        // MODIFIED: Helper method to initialize the GUI state actions dictionary
+        // (Replaces the old InitializeGuiStateActions with more complete logic)
+        // ================================================================
+        private void InitializeGuiStateActions()
+        {
+            // NOTE: This dictionary now enables controls matching the original logic more closely,
+            //       plus additions like Zoom, Hold, DPI controls where appropriate.
+            guiStateActions = new Dictionary<GUIStates, Action>
+            {
+                // S0blank: Nothing enabled except file/usb open
+                {GUIStates.S0blank, () => { /* No extra controls enabled beyond default */ }},
+
+                // S1bmpLoaded: BMP is loaded, allow move, center, clear, slice, zoom, hold, dpi
+                {GUIStates.S1bmpLoaded, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg, btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi)},
+
+                // S2bmpSliced: BMP is sliced, allow previous + slice controls
+                {GUIStates.S2bmpSliced, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg, sliderCmdCount, btnSliderDecrease, btnSliderIncrease, btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi)},
+
+                // S3usbConnected: USB connected, allow direct serial commands, plotter controls
+                {GUIStates.S3usbConnected, () => EnableControls(txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition)},
+
+                // S4bmpLoadedUsbConnected: BMP loaded and USB connected, allow S1 + S3 controls
+                {GUIStates.S4bmpLoadedUsbConnected, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg, txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition, btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi)},
+
+                // S5bmpSlicedUsbConnected: BMP sliced and USB connected, allow S2 + S3 controls + drawing controls + bounding box
+                {GUIStates.S5bmpSlicedUsbConnected, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg, btnBoundingBox, checkBoxDrawingBoundingBox, btnPauseDrawing, btnSendImg, btnCmdStart, sliderCmdCount, btnSliderDecrease, btnSliderIncrease, txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition, btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi)},
+
+                // S6bmpDrawing: BMP is drawing, allow pausing and direct plotter controls (matching S5 for now)
+                {GUIStates.S6bmpDrawing, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg, btnBoundingBox, checkBoxDrawingBoundingBox, btnPauseDrawing, btnSendImg, btnCmdStart, sliderCmdCount, btnSliderDecrease, btnSliderIncrease, txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition, btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi)},
+
+                // S7svgLoaded: SVG is loaded, allow move, center, clear, zoom, hold
+                {GUIStates.S7svgLoaded, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnZoomIn, btnZoomOut, btnHoldImg)},
+
+                // S8svgLoadedUsbConnected: SVG loaded and USB connected, allow S7 + S3 controls + drawing (no slicing/bbox/slider for SVG)
+                {GUIStates.S8svgLoadedUsbConnected, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnPauseDrawing, btnSendImg, /* btnCmdStart, sliderCmdCount, btnSliderDecrease, btnSliderIncrease, */ txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition, btnZoomIn, btnZoomOut, btnHoldImg)},
+
+                // S9svgDrawing: SVG is drawing, allow pausing and direct plotter controls (matching S8 for now)
+                {GUIStates.S9svgDrawing, () => EnableControls(txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnPauseDrawing, btnSendImg, /* btnCmdStart, sliderCmdCount, btnSliderDecrease, btnSliderIncrease, */ txtSerialCmd, btnSend, btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition, btnZoomIn, btnZoomOut, btnHoldImg)}
+            };
+        }
+
+        // ================================================================
+        // MODIFIED: State Machine Handling Logic
+        // (Minor logging/error handling improvements)
+        // ================================================================
         private void handleGUIstates()
         {
-            switch (currentState)
+            if (stateTransitions.TryGetValue((currentState, currentTransition), out GUIStates newState))
             {
-                case GUIStates.S0blank:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S1bmpLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S7svgLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S1bmpLoaded:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S1bmpLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A1bmpSlice:
-                            currentState = GUIStates.S2bmpSliced;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S0blank;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S7svgLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S2bmpSliced:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S1bmpLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A1bmpSlice:
-                            currentState = GUIStates.S2bmpSliced;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S0blank;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S7svgLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S5bmpSlicedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S3usbConnected:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S0blank;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S4bmpLoadedUsbConnected:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A1bmpSlice:
-                            currentState = GUIStates.S5bmpSlicedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S1bmpLoaded;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S5bmpSlicedUsbConnected:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A1bmpSlice:
-                            currentState = GUIStates.S5bmpSlicedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A5startDrawing:
-                            currentState = GUIStates.S6bmpDrawing;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S2bmpSliced;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S6bmpDrawing:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A5startDrawing:
-                            currentState = GUIStates.S5bmpSlicedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S7svgLoaded:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S1bmpLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S0blank;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S7svgLoaded;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S8svgLoadedUsbConnected:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A4usbOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A5startDrawing:
-                            currentState = GUIStates.S9svgDrawing;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S7svgLoaded;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case GUIStates.S9svgDrawing:
-                    switch (currentTransition)
-                    {
-                        case GUIActions.A0bmpOpen:
-                            currentState = GUIStates.S4bmpLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A2clear:
-                            currentState = GUIStates.S3usbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A3svgOpen:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A5startDrawing:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        case GUIActions.A6usbClose:
-                            currentState = GUIStates.S8svgLoadedUsbConnected;
-                            updateGUIelements();
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                default:
-                    break;
+                Console.WriteLine($"State Transition: {currentState} --({currentTransition})--> {newState}"); // Log transition
+                currentState = newState;
+                updateGUIelements(); // Update GUI for the new state
+            }
+            else
+            {
+                // Log or show message for undefined transitions, but don't change state
+                Console.WriteLine($"State Machine Warning: No defined transition from {currentState} with action {currentTransition}. State unchanged.");
+                // MessageBox.Show($"Invalid action '{currentTransition}' for current state '{currentState}'.", "State Machine Info", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
-        
+        // ================================================================
+        // MODIFIED: GUI Update Logic
+        // (Added specific control updates after general enablement)
+        // ================================================================
+        private void updateGUIelements()
+        {
+            // 1. Disable all controls managed by the state machine
+            disableAllGUIelements();
+
+            // 2. Enable controls based on the current state
+            if (guiStateActions.TryGetValue(currentState, out Action enableAction))
+            {
+                enableAction(); // Execute the delegate to enable specific controls
+            }
+            else
+            {
+                Console.WriteLine($"State Machine Error: No GUI update action defined for state {currentState}.");
+                MessageBox.Show($"Internal Error: Missing UI update logic for state {currentState}.", "State Machine Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // 3. Update specific control states not handled by simple enable/disable
+            // Update Connect button text and COM port dropdown based on port state
+            if (port != null && port.IsOpen)
+            {
+                btnConnect.Content = "Disconnect";
+                comboBoxCOM.IsEnabled = false; // Can't change port while connected
+            }
+            else
+            {
+                btnConnect.Content = "Connect USB";
+                comboBoxCOM.IsEnabled = true; // Can change port when disconnected
+            }
+
+            // Update Hold button text based on retentionImage state
+            if (retentionImage != null)
+            {
+                btnHoldImg.Content = "Release first image";
+            }
+            else
+            {
+                btnHoldImg.Content = "Hold image";
+            }
+
+            // Update Pause button text based on whether it's currently showing "Continue"
+            // (This assumes the button text reflects the desired *next* action, not the current state)
+            // A more robust way might use a separate boolean like `isPaused`.
+            // If the state is NOT a drawing state, ensure it says "Pause"
+            if (currentState != GUIStates.S6bmpDrawing && currentState != GUIStates.S9svgDrawing)
+            {
+                if (btnPauseDrawing.Content.ToString().Contains("Continue")) // Reset if not drawing
+                {
+                    btnPauseDrawing.Content = "Pause drawing";
+                }
+            }
+            // If it IS a drawing state, the btnPauseDrawing_Click handler manages the text.
+        }
+
+
+        // ================================================================
+        // MODIFIED: Helper Methods for GUI Updates
+        // (Added more controls to disable list, added null checks)
+        // ================================================================
+        private void disableAllGUIelements()
+        {
+            var controlsToManage = new Control[] {
+                txtMoveX, txtMoveY, btnMoveImg, btnCenterImg, btnClearImg, btnSliceImg,
+                btnBoundingBox, checkBoxDrawingBoundingBox, btnPauseDrawing, btnSendImg, btnCmdStart,
+                sliderCmdCount, btnSliderDecrease, btnSliderIncrease, txtSerialCmd, btnSend,
+                btnEnableStepper, btnDisableStepper, btnPenTouchCanvas, btnNoPenTouchCanvas, btnHomePosition,
+                btnZoomIn, btnZoomOut, btnHoldImg, btnUpdateDpi, txtDpi,
+                // btnConnect and comboBoxCOM handled separately in updateGUIelements
+            };
+
+            foreach (var control in controlsToManage)
+            {
+                if (control != null) // Basic null check
+                {
+                    control.IsEnabled = false;
+                }
+            }
+        }
+
+        // MODIFIED: Added null check
+        private static void EnableControls(params Control[] controls)
+        {
+            foreach (var control in controls)
+            {
+                if (control != null) // Basic null check
+                {
+                    control.IsEnabled = true;
+                }
+            }
+        }
+
+
     }//main window
     }
 
